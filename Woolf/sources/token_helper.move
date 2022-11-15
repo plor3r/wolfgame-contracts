@@ -15,6 +15,7 @@ module woolf_deployer::token_helper {
     use aptos_framework::account::{Self, SignerCapability};
     use woolf_deployer::config;
     use woolf_deployer::utf8_utils;
+    use aptos_framework::reconfiguration::last_reconfiguration_time;
 
     const COLLECTION_NAME_V1: vector<u8> = b"Woolf Game NFT";
 
@@ -33,7 +34,6 @@ module woolf_deployer::token_helper {
     fun get_token_signer(): signer acquires CollectionCapability {
         account::create_signer_with_capability(&borrow_global<CollectionCapability>(@woolf_deployer).capability)
     }
-
 
     public fun collection_name_v1(): String {
         return string::utf8(COLLECTION_NAME_V1)
@@ -84,6 +84,15 @@ module woolf_deployer::token_helper {
         token::check_tokendata_exists(creator, collection_name, token_name)
     }
 
+    public(friend) fun collection_supply(): u64 acquires CollectionCapability {
+        let token_resource_address = get_token_signer_address();
+        let supply = token::get_collection_supply(token_resource_address, collection_name_v1());
+        if (option::is_some<u64>(&supply)) {
+            return option::extract(&mut supply)
+        } else {
+            0
+        }
+    }
     /// gets or creates the token data for the given domain name
     public(friend) fun ensure_token_data(
         token_name: String

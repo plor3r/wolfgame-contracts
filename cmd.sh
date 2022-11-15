@@ -10,4 +10,4 @@ aptos move compile --package-dir Woolf --named-addresses woolf_deployer=${woolf_
 aptos move publish --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
 
 #aptos move run --function-id ${woolf_deployer}::WoolfResourceAccount::initialize_woolf_account
-aptos move run --function-id ${WoolfDwoolf_deployereployer}::Woolf::mint_nft
+aptos move run --function-id ${woolf_deployer}::woolf::mint_nft

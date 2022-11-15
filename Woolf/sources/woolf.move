@@ -16,12 +16,15 @@ module woolf_deployer::woolf {
     use woolf_deployer::config;
     use woolf_deployer::utf8_utils;
 
+    /// The Naming Service contract is not enabled
+    const ENOT_ENABLED: u64 = 1;
     /// Action not authorized because the signer is not the owner of this module
     const ENOT_AUTHORIZED: u64 = 1;
     /// The collection minting is disabled
     const EMINTING_DISABLED: u64 = 3;
 
-    const MINT_PRICE: u64 = 6942000000; // 69.42 APT
+    const MINT_PRICE: u64 = 6942000000;
+    // 69.42 APT
     const MAX_TOKENS: u64 = 50000;
     const PAID_TOKENS: u64 = 10000;
 
@@ -50,7 +53,7 @@ module woolf_deployer::woolf {
 
     struct Woolf {}
 
-    fun init_module(admin: &signer){
+    fun init_module(admin: &signer) {
         let admin_address: address = @woolf_deployer;
 
         if (!account::exists_at(admin_address)) {
@@ -61,9 +64,7 @@ module woolf_deployer::woolf {
         token_helper::initialize(admin);
     }
 
-    fun init_internal(account: &signer){
-
-    }
+    fun init_internal(account: &signer) {}
 
     /// Set if minting is enabled for this collection token minter
     public entry fun set_minting_enabled(minter: &signer, minting_enabled: bool) acquires CollectionTokenMinter {
@@ -74,16 +75,19 @@ module woolf_deployer::woolf {
     }
 
     /// Mint an NFT to the receiver.
-    public entry fun mint_nft(receiver: &signer) acquires CollectionTokenMinter {
+    public entry fun mint_nft(receiver: &signer) {
         let receiver_addr = signer::address_of(receiver);
 
-        // get the collection minter and check if the collection minting is disabled or expired
-        let collection_token_minter = borrow_global_mut<CollectionTokenMinter>(@woolf_deployer);
-        assert!(collection_token_minter.minting_enabled, error::permission_denied(EMINTING_DISABLED));
-        
+        assert!(config::is_enabled(), error::unavailable(ENOT_ENABLED));
+
+        // // get the collection minter and check if the collection minting is disabled or expired
+        // let collection_token_minter = borrow_global_mut<CollectionTokenMinter>(@woolf_deployer);
+        // assert!(collection_token_minter.minting_enabled, error::permission_denied(EMINTING_DISABLED));
+
         // fee
         // coin::transfer
-        let token_name:String = utf8_utils::u128_to_string(1u128);
+        let token_num = token_helper::collection_supply() + 1;
+        let token_name: String = utf8_utils::u128_to_string((token_num as u128));
 
         // Create the token, and transfer it to the user
         let tokendata_id = token_helper::ensure_token_data(token_name);

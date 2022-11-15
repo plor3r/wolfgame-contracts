@@ -1,5 +1,5 @@
 /// The module used to create user resource account for swap and deploy LP coins under that account.
-module woolf_deployer::WoolfResourceAccount {
+module woolf_deployer::woolf_resource_account {
     use std::signer;
 
     use aptos_framework::account::{Self, SignerCapability};
