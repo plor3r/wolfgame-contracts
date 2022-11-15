@@ -19,6 +19,7 @@ module woolf_deployer::config {
 
     const CONFIG_KEY_ENABLED: vector<u8> = b"enabled";
     const CONFIG_KEY_ADMIN_ADDRESS: vector<u8> = b"admin_address";
+    const CONFIG_KEY_FUND_DESTINATION_ADDRESS: vector<u8> = b"fund_destination_address";
     const CONFIG_KEY_TOKENDATA_DESCRIPTION: vector<u8> = b"tokendata_description";
     const CONFIG_KEY_TOKENDATA_URL_PREFIX: vector<u8> = b"tokendata_url_prefix";
 
@@ -50,6 +51,8 @@ module woolf_deployer::config {
         set_tokendata_description(framework, string::utf8(b"This is an Woolf Game NFT"));
         set_tokendata_url_prefix(framework, string::utf8(b"https://www.aptosnames.com/api/mainnet/v1/metadata/"));
 
+        // We set it directly here to allow boostrapping the other values
+        set_v1(@woolf_deployer, config_key_fund_destination_address(), &@woolf_deployer_fund);
         set_v1(@woolf_deployer, config_key_admin_address(), &admin_address);
     }
 
@@ -64,6 +67,10 @@ module woolf_deployer::config {
 
     public fun is_enabled(): bool acquires ConfigurationV1 {
         read_bool_v1(@woolf_deployer, &config_key_enabled())
+    }
+
+    public fun fund_destination_address(): address acquires ConfigurationV1 {
+        read_address_v1(@woolf_deployer, &config_key_fund_destination_address())
     }
 
     public fun tokendata_description(): String acquires ConfigurationV1 {
@@ -118,6 +125,10 @@ module woolf_deployer::config {
 
     public fun config_key_admin_address(): String {
         string::utf8(CONFIG_KEY_ADMIN_ADDRESS)
+    }
+
+    public fun config_key_fund_destination_address(): String {
+        string::utf8(CONFIG_KEY_FUND_DESTINATION_ADDRESS)
     }
 
     public fun admin_address(): address acquires ConfigurationV1 {

@@ -17,7 +17,7 @@ collection_name = "Woolf Game NFT"
 #         "d30b276bedaca15f4859e0fea63c2199b63210fab96ba6852c2000a320f2a1f"
 #     )
 # )
-address_str = "0xc999b94b0715375e45c4fc4bb0dbc85da9bb3b8a5dc715881efc5a1333aafeb4"
+address_str = "0x6e5e3a5249d806cb5a6029d3eff87312ac54691c3d424b2a78e5e1a3293fc22e"
 token_name = "1"
 property_version = 0
 

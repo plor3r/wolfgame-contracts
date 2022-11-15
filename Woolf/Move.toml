@@ -17,5 +17,5 @@ subdir = 'aptos-move/framework/aptos-token'
 
 [addresses]
 woolf_deployer="_"
-#woolf_deployer_admin="_"
+woolf_deployer_fund="0xf2db9526accac625e00dac4c3d3aa27bf55ec7d24b0723c1d1a35b42757b3a1e"
 # WoolfResourceDeployer="0x45c8afc3a42f5310146f4cb50da818748f3a4ef2e69c86d3a3ee233869e02286"

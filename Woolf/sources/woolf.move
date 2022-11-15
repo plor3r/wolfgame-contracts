@@ -6,6 +6,8 @@ module woolf_deployer::woolf {
 
     use aptos_framework::account;
     use aptos_framework::aptos_account;
+    use aptos_framework::aptos_coin::AptosCoin;
+    use aptos_framework::coin;
     use aptos_framework::event::{Self, EventHandle};
     // use aptos_framework::timestamp;
     use aptos_token::token::{Self, TokenDataId};
@@ -22,11 +24,20 @@ module woolf_deployer::woolf {
     const ENOT_AUTHORIZED: u64 = 1;
     /// The collection minting is disabled
     const EMINTING_DISABLED: u64 = 3;
+    /// All minted
+    const EALL_MINTED: u64 = 4;
+    /// Invalid minting
+    const EINVALID_MINTING: u64 = 5;
 
+
+    //
+    // constants
+    //
     const MINT_PRICE: u64 = 6942000000;
     // 69.42 APT
     const MAX_TOKENS: u64 = 50000;
     const PAID_TOKENS: u64 = 10000;
+    const MAX_SINGLE_MINT: u64 = 10;
 
     // tokenTraits?
     // existingCombinations?
@@ -75,63 +86,74 @@ module woolf_deployer::woolf {
     }
 
     /// Mint an NFT to the receiver.
-    public entry fun mint_nft(receiver: &signer) {
+    public entry fun mint_nft(receiver: &signer, amount: u64) {
         let receiver_addr = signer::address_of(receiver);
-
         assert!(config::is_enabled(), error::unavailable(ENOT_ENABLED));
 
-        // // get the collection minter and check if the collection minting is disabled or expired
-        // let collection_token_minter = borrow_global_mut<CollectionTokenMinter>(@woolf_deployer);
-        // assert!(collection_token_minter.minting_enabled, error::permission_denied(EMINTING_DISABLED));
+        assert!(amount > 0 && amount <= MAX_SINGLE_MINT, error::out_of_range(EINVALID_MINTING));
 
-        // fee
-        // coin::transfer
-        let token_num = token_helper::collection_supply() + 1;
-        let token_name: String = utf8_utils::u128_to_string((token_num as u128));
+        let token_supply = token_helper::collection_supply();
+        assert!(token_supply + amount <= MAX_TOKENS, error::out_of_range(EALL_MINTED));
 
-        // Create the token, and transfer it to the user
-        let tokendata_id = token_helper::ensure_token_data(token_name);
-        let token_id = token_helper::create_token(tokendata_id);
+        if (token_supply < PAID_TOKENS) {
+            assert!(token_supply + amount < PAID_TOKENS, error::out_of_range(EALL_MINTED));
+        };
 
-        // let (property_keys, property_values, property_types) = get_name_property_map(
-        //     subdomain_name,
-        //     name_expiration_time_secs
-        // );
-        // token_id = token_helper::set_token_props(
-        //     token_helper::get_token_signer_address(),
-        //     property_keys,
-        //     property_values,
-        //     property_types,
-        //     token_id
-        // );
-        token_helper::transfer_token_to(receiver, token_id);
+        // TODO: fee and transfer
+        // let price = config::octas() / 100 * 6942 * amount;
+        let price: u64 = 500000 * amount;
+        coin::transfer<AptosCoin>(receiver, config::fund_destination_address(), price);
 
-        // // mint token to the receiver
-        // let resource_signer = account::create_signer_with_capability(&collection_token_minter.signer_cap);
-        // let token_id = token::mint_token(&resource_signer, collection_token_minter.token_data_id, 1);
-        // token::direct_transfer(&resource_signer, receiver, token_id, 1);
-        //
-        // event::emit_event<TokenMintingEvent>(
-        //     &mut collection_token_minter.token_minting_events,
-        //     TokenMintingEvent {
-        //         token_receiver_address: receiver_addr,
-        //         token_data_id: collection_token_minter.token_data_id,
-        //     }
-        // );
-        //
-        // // mutate the token properties to update the property version of this token
-        // let (creator_address, collection, name) = token::get_token_data_id_fields(&collection_token_minter.token_data_id);
-        // token::mutate_token_properties(
-        //     &resource_signer,
-        //     receiver_addr,
-        //     creator_address,
-        //     collection,
-        //     name,
-        //     0, // token_property_version
-        //     1, // amount
-        //     vector::empty<String>(),
-        //     vector::empty<vector<u8>>(),
-        //     vector::empty<String>(),
-        // );
+        let i = 0;
+        while (i < amount) {
+            let new_token_num = token_helper::collection_supply() + 1;
+            let token_name: String = utf8_utils::u128_to_string((new_token_num as u128));
+
+            // Create the token, and transfer it to the user
+            let tokendata_id = token_helper::ensure_token_data(token_name);
+            let token_id = token_helper::create_token(tokendata_id);
+
+            // let (property_keys, property_values, property_types) = get_name_property_map(
+            //     subdomain_name,
+            //     name_expiration_time_secs
+            // );
+            // token_id = token_helper::set_token_props(
+            //     token_helper::get_token_signer_address(),
+            //     property_keys,
+            //     property_values,
+            //     property_types,
+            //     token_id
+            // );
+            token_helper::transfer_token_to(receiver, token_id);
+
+            // // mint token to the receiver
+            // let resource_signer = account::create_signer_with_capability(&collection_token_minter.signer_cap);
+            // let token_id = token::mint_token(&resource_signer, collection_token_minter.token_data_id, 1);
+            // token::direct_transfer(&resource_signer, receiver, token_id, 1);
+            //
+            // event::emit_event<TokenMintingEvent>(
+            //     &mut collection_token_minter.token_minting_events,
+            //     TokenMintingEvent {
+            //         token_receiver_address: receiver_addr,
+            //         token_data_id: collection_token_minter.token_data_id,
+            //     }
+            // );
+            //
+            // // mutate the token properties to update the property version of this token
+            // let (creator_address, collection, name) = token::get_token_data_id_fields(&collection_token_minter.token_data_id);
+            // token::mutate_token_properties(
+            //     &resource_signer,
+            //     receiver_addr,
+            //     creator_address,
+            //     collection,
+            //     name,
+            //     0, // token_property_version
+            //     1, // amount
+            //     vector::empty<String>(),
+            //     vector::empty<vector<u8>>(),
+            //     vector::empty<String>(),
+            // );
+            i = i + 1;
+        };
     }
 }
