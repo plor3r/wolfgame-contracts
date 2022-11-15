@@ -1,0 +1,21 @@
+[package]
+name = 'woolf'
+version = '1.0.0'
+
+[dependencies.AptosFramework]
+git = 'https://github.com/aptos-labs/aptos-core.git'
+rev = 'main'
+subdir = 'aptos-move/framework/aptos-framework'
+
+[dependencies.AptosToken]
+git = 'https://github.com/aptos-labs/aptos-core.git'
+rev = 'main'
+subdir = 'aptos-move/framework/aptos-token'
+
+#[dependencies.WoolfResourceAccount]
+#local = "../WoolfResourceAccount"
+
+[addresses]
+woolf_deployer="_"
+#woolf_deployer_admin="_"
+# WoolfResourceDeployer="0x45c8afc3a42f5310146f4cb50da818748f3a4ef2e69c86d3a3ee233869e02286"
