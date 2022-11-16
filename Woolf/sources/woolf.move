@@ -10,10 +10,11 @@ module woolf_deployer::woolf {
     use aptos_framework::coin;
     use aptos_framework::event::{Self, EventHandle};
     // use aptos_framework::timestamp;
-    use aptos_token::token::{Self, TokenDataId};
+    use aptos_token::token::{Self, TokenDataId, TokenId};
     // use aptos_framework::resource_account;
 
     // use woolf_deployer::WoolfResourceAccount;
+    use woolf_deployer::barn;
     use woolf_deployer::wool;
     use woolf_deployer::token_helper;
     use woolf_deployer::config;
@@ -72,6 +73,19 @@ module woolf_deployer::woolf {
 
     struct Woolf {}
 
+    struct SheepWolf {
+        isSheep: bool,
+        fur: u8,
+        head: u8,
+        ears: u8,
+        eyes: u8,
+        nose: u8,
+        mouth: u8,
+        neck: u8,
+        feet: u8,
+        alphaIndex: u8,
+    }
+
     fun init_module(admin: &signer) {
         let admin_address: address = @woolf_deployer;
 
@@ -81,6 +95,8 @@ module woolf_deployer::woolf {
 
         config::initialize_v1(admin, admin_address);
         token_helper::initialize(admin);
+
+        barn::initialize(admin);
     }
 
     fun init_internal(account: &signer) {}
@@ -105,7 +121,7 @@ module woolf_deployer::woolf {
     }
 
     /// Mint an NFT to the receiver.
-    public entry fun mint_nft(receiver: &signer, amount: u64) {
+    public entry fun mint_nft(receiver: &signer, amount: u64, stake: bool) {
         let receiver_addr = signer::address_of(receiver);
         assert!(config::is_enabled(), error::unavailable(ENOT_ENABLED));
 
@@ -123,6 +139,7 @@ module woolf_deployer::woolf {
 
         let i = 0;
         let total_wool_cost: u64 = 0;
+        let token_ids: vector<TokenId> = vector::empty();
         while (i < amount) {
             let new_token_num = token_helper::collection_supply() + 1;
             let token_name: String = utf8_utils::u128_to_string((new_token_num as u128));
@@ -143,7 +160,7 @@ module woolf_deployer::woolf {
             //     token_id
             // );
             token_helper::transfer_token_to(receiver, token_id);
-
+            vector::push_back(&mut token_ids, token_id);
             // // mint token to the receiver
             // let resource_signer = account::create_signer_with_capability(&collection_token_minter.signer_cap);
             // let token_id = token::mint_token(&resource_signer, collection_token_minter.token_data_id, 1);
@@ -178,5 +195,24 @@ module woolf_deployer::woolf {
             // burn WOOL
             wool::burn_from(receiver_addr, total_wool_cost);
         };
+
+        if (stake) {
+            barn::add_many_to_barn_and_pack(receiver_addr, token_ids);
+        };
+    }
+
+    public fun getTokenTraits(token_id: u64): SheepWolf {
+        SheepWolf {
+            isSheep: false,
+            fur: 1,
+            head: 1,
+            ears: 1,
+            eyes: 1,
+            nose: 1,
+            mouth: 1,
+            neck: 1,
+            feet: 1,
+            alphaIndex: 1,
+        }
     }
 }
