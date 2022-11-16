@@ -14,6 +14,7 @@ module woolf_deployer::woolf {
     // use aptos_framework::resource_account;
 
     // use woolf_deployer::WoolfResourceAccount;
+    use woolf_deployer::wool;
     use woolf_deployer::token_helper;
     use woolf_deployer::config;
     use woolf_deployer::utf8_utils;
@@ -33,10 +34,17 @@ module woolf_deployer::woolf {
     //
     // constants
     //
-    const MINT_PRICE: u64 = 6942000000;
+
     // 69.42 APT
-    const MAX_TOKENS: u64 = 50000;
-    const PAID_TOKENS: u64 = 10000;
+    // const MINT_PRICE: u64 = 6942000000;
+    // const MAX_TOKENS: u64 = 50000;
+    // const PAID_TOKENS: u64 = 10000;
+    // const MAX_SINGLE_MINT: u64 = 10;
+
+    // testing config
+    const MINT_PRICE: u64 = 50000;
+    const MAX_TOKENS: u64 = 5;
+    const PAID_TOKENS: u64 = 1;
     const MAX_SINGLE_MINT: u64 = 10;
 
     // tokenTraits?
@@ -85,6 +93,17 @@ module woolf_deployer::woolf {
         collection_token_minter.minting_enabled = minting_enabled;
     }
 
+    public fun mint_cost(token_id: u64): u64 {
+        if (token_id <= PAID_TOKENS) {
+            return 0
+        } else if (token_id <= MAX_TOKENS * 2 / 5) {
+            return 2000 * config::octas()
+        } else if (token_id <= MAX_TOKENS * 4 / 5) {
+            return 4000 * config::octas()
+        };
+        8000 * config::octas()
+    }
+
     /// Mint an NFT to the receiver.
     public entry fun mint_nft(receiver: &signer, amount: u64) {
         let receiver_addr = signer::address_of(receiver);
@@ -96,15 +115,14 @@ module woolf_deployer::woolf {
         assert!(token_supply + amount <= MAX_TOKENS, error::out_of_range(EALL_MINTED));
 
         if (token_supply < PAID_TOKENS) {
-            assert!(token_supply + amount < PAID_TOKENS, error::out_of_range(EALL_MINTED));
+            assert!(token_supply + amount <= PAID_TOKENS, error::out_of_range(EALL_MINTED));
+            // TODO: fee and transfer
+            let price = MINT_PRICE * amount;
+            coin::transfer<AptosCoin>(receiver, config::fund_destination_address(), price);
         };
 
-        // TODO: fee and transfer
-        // let price = config::octas() / 100 * 6942 * amount;
-        let price: u64 = 500000 * amount;
-        coin::transfer<AptosCoin>(receiver, config::fund_destination_address(), price);
-
         let i = 0;
+        let total_wool_cost: u64 = 0;
         while (i < amount) {
             let new_token_num = token_helper::collection_supply() + 1;
             let token_name: String = utf8_utils::u128_to_string((new_token_num as u128));
@@ -153,7 +171,12 @@ module woolf_deployer::woolf {
             //     vector::empty<vector<u8>>(),
             //     vector::empty<String>(),
             // );
+            total_wool_cost = total_wool_cost + mint_cost(new_token_num);
             i = i + 1;
+        };
+        if (total_wool_cost > 0) {
+            // burn WOOL
+            wool::burn_from(receiver_addr, total_wool_cost);
         };
     }
 }

@@ -1,4 +1,4 @@
-module woolf_deployer::Wool {
+module woolf_deployer::wool {
     use std::string;
     use std::error;
     use std::signer;
