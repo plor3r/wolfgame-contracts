@@ -93,6 +93,21 @@ module woolf_deployer::barn {
     }
 
     #[test(account = @woolf_deployer)]
+    fun test_add_sheep_to_barn(account: &signer, ) acquires Barn {
+        let account_addr = signer::address_of(account);
+        let token_id = token::create_token_id_raw(
+            account_addr,
+            config::collection_name_v1(),
+            string::utf8(b"123"),
+            0
+        );
+        initialize(account);
+        add_sheep_to_barn(account_addr, token_id);
+        let barn = borrow_global<Barn>(@woolf_deployer);
+        assert!(table::contains(&barn.items, token_id), 1);
+    }
+
+    #[test(account = @woolf_deployer)]
     fun test_add_wolf_to_pack(account: &signer, ) acquires Pack {
         let account_addr = signer::address_of(account);
         let token_id = token::create_token_id_raw(
