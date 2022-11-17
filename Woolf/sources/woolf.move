@@ -1,16 +1,17 @@
 module woolf_deployer::woolf {
     use std::error;
     use std::signer;
-    use std::string::{Self, String};
+    use std::string::String;
     use std::vector;
+    use std::debug;
 
     use aptos_framework::account;
     use aptos_framework::aptos_account;
     use aptos_framework::aptos_coin::AptosCoin;
     use aptos_framework::coin;
-    use aptos_framework::event::{Self, EventHandle};
+    use aptos_framework::event::EventHandle;
     // use aptos_framework::timestamp;
-    use aptos_token::token::{Self, TokenDataId, TokenId};
+    use aptos_token::token::{TokenDataId, TokenId};
     // use aptos_framework::resource_account;
 
     // use woolf_deployer::WoolfResourceAccount;
@@ -99,7 +100,9 @@ module woolf_deployer::woolf {
         barn::initialize(admin);
     }
 
-    fun init_internal(account: &signer) {}
+    fun init_internal(account: &signer) {
+        debug::print(account);
+    }
 
     /// Set if minting is enabled for this collection token minter
     public entry fun set_minting_enabled(minter: &signer, minting_enabled: bool) acquires CollectionTokenMinter {
@@ -202,6 +205,7 @@ module woolf_deployer::woolf {
     }
 
     public fun getTokenTraits(token_id: u64): SheepWolf {
+        debug::print(&token_id);
         SheepWolf {
             isSheep: false,
             fur: 1,
