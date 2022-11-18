@@ -1,15 +1,25 @@
 // Barn
 module woolf_deployer::barn {
     use aptos_framework::timestamp;
-    use aptos_token::token::{Self, TokenId};
+    use aptos_token::token::TokenId;
     use aptos_std::table::{Self, Table};
     use aptos_std::debug;
     use std::vector;
-    use std::signer;
-    use std::string;
+
+    use woolf_deployer::random;
+    use woolf_deployer::random::rand_u64_with_seed;
 
     friend woolf_deployer::woolf;
+
+    #[test_only]
+    use std::signer;
+    #[test_only]
+    use std::string;
+    #[test_only]
     use woolf_deployer::config;
+    #[test_only]
+    use aptos_token::token;
+
 
     // maximum alpha score for a Wolf
     const MAX_ALPHA: u8 = 8;
@@ -29,12 +39,12 @@ module woolf_deployer::barn {
 
     struct Pack has key, store {
         total_alpha_staked: u64,
-        items: Table<TokenId, vector<Stake>>
+        items: Table<u8, vector<Stake>>
     }
 
     public(friend) fun initialize(framework: &signer) {
         move_to(framework, Barn { items: table::new() });
-        move_to(framework, Pack { total_alpha_staked: 0, items: table::new<TokenId, vector<Stake>>() });
+        move_to(framework, Pack { total_alpha_staked: 0, items: table::new<u8, vector<Stake>>() });
     }
 
     public(friend) fun add_many_to_barn_and_pack(account: address, token_ids: vector<TokenId>) acquires Barn, Pack {
@@ -44,7 +54,7 @@ module woolf_deployer::barn {
             // TODO transfer token to this
 
             let token_id = vector::borrow(&token_ids, i);
-            if (isSheep(*token_id)) {
+            if (is_sheep(*token_id)) {
                 add_sheep_to_barn(account, *token_id);
             } else {
                 add_wolf_to_pack(account, *token_id);
@@ -54,7 +64,8 @@ module woolf_deployer::barn {
         };
     }
 
-    fun isSheep(token_id: TokenId): bool {
+    fun is_sheep(token_id: TokenId): bool {
+        // let t = woolf::get_token_traits(token_id);
         debug::print(&token_id);
         false
     }
@@ -79,10 +90,10 @@ module woolf_deployer::barn {
         };
         let pack = borrow_global_mut<Pack>(@woolf_deployer);
         pack.total_alpha_staked = pack.total_alpha_staked + (alpha as u64);
-        if (!table::contains(&mut pack.items, token_id)) {
-            table::add(&mut pack.items, token_id, vector::empty());
+        if (!table::contains(&mut pack.items, alpha)) {
+            table::add(&mut pack.items, alpha, vector::empty());
         };
-        let token_pack = table::borrow_mut(&mut pack.items, token_id);
+        let token_pack = table::borrow_mut(&mut pack.items, alpha);
         vector::push_back(token_pack, stake);
     }
 
@@ -92,23 +103,48 @@ module woolf_deployer::barn {
         MAX_ALPHA - alpha_index // alpha index is 0-3
     }
 
-    #[test(account = @woolf_deployer)]
-    fun test_add_sheep_to_barn(account: &signer, ) acquires Barn {
-        let account_addr = signer::address_of(account);
-        let token_id = token::create_token_id_raw(
-            account_addr,
-            config::collection_name_v1(),
-            string::utf8(b"123"),
-            0
-        );
-        initialize(account);
-        add_sheep_to_barn(account_addr, token_id);
-        let barn = borrow_global<Barn>(@woolf_deployer);
-        assert!(table::contains(&barn.items, token_id), 1);
+    // chooses a random Wolf thief when a newly minted token is stolen
+    public(friend) fun random_wolf_owner(seed: vector<u8>): address acquires Pack {
+        let pack = borrow_global<Pack>(@woolf_deployer);
+        if (pack.total_alpha_staked == 0) {
+            return @0x0
+        };
+        let bucket = random::rand_u64_range_with_seed(seed, 0, pack.total_alpha_staked);
+        let cumulative: u64 = 0;
+        // loop through each bucket of Wolves with the same alpha score
+        let i = MAX_ALPHA - 3;
+        while (i <= MAX_ALPHA) {
+            let wolves = table::borrow(&pack.items, i);
+            cumulative = cumulative + vector::length(wolves) * (i as u64);
+
+            i = i + 1;
+            // if the value is not inside of that bucket, keep going
+            if (bucket >= cumulative) {
+                continue
+            };
+            // get the address of a random Wolf with that alpha score
+            return vector::borrow(wolves, rand_u64_with_seed(seed) % vector::length(wolves)).owner
+        };
+        @0x0
     }
 
+    // #[test(account = @woolf_deployer)]
+    // fun test_add_sheep_to_barn(account: &signer) acquires Barn {
+    //     let account_addr = signer::address_of(account);
+    //     let token_id = token::create_token_id_raw(
+    //         account_addr,
+    //         config::collection_name_v1(),
+    //         string::utf8(b"123"),
+    //         0
+    //     );
+    //     initialize(account);
+    //     add_sheep_to_barn(account_addr, token_id);
+    //     let barn = borrow_global<Barn>(@woolf_deployer);
+    //     assert!(table::contains(&barn.items, token_id), 1);
+    // }
+
     #[test(account = @woolf_deployer)]
-    fun test_add_wolf_to_pack(account: &signer, ) acquires Pack {
+    fun test_add_wolf_to_pack(account: &signer) acquires Pack {
         let account_addr = signer::address_of(account);
         let token_id = token::create_token_id_raw(
             account_addr,
@@ -118,8 +154,9 @@ module woolf_deployer::barn {
         );
         initialize(account);
         add_wolf_to_pack(account_addr, token_id);
+        let alpha = alpha_for_wolf(token_id);
         let pack = borrow_global_mut<Pack>(@woolf_deployer);
-        let token_pack = table::borrow(&mut pack.items, token_id);
+        let token_pack = table::borrow(&mut pack.items, alpha);
         assert!(vector::length(token_pack) == 1, 1);
     }
 }
