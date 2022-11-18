@@ -4,6 +4,8 @@ module woolf_deployer::wool {
     use std::signer;
     use aptos_framework::coin::{Self, MintCapability, BurnCapability};
 
+    friend woolf_deployer::woolf;
+
     const ENO_CAPABILITIES: u64 = 1;
 
     const DEPLOYER: address = @woolf_deployer;
@@ -15,7 +17,7 @@ module woolf_deployer::wool {
         burn: BurnCapability<Wool>,
     }
 
-    fun init_module(admin: &signer) {
+    public(friend) fun initialize(admin: &signer) {
         let (burn, freeze, mint) = coin::initialize<Wool>(
             admin, string::utf8(b"Woolf Game"), string::utf8(b"WOOL"), 8, true);
         coin::destroy_freeze_cap(freeze);
@@ -28,6 +30,13 @@ module woolf_deployer::wool {
     }
 
     public entry fun register_coin(account: &signer) {
+        if (!coin::is_account_registered<Wool>(signer::address_of(account))) {
+            coin::register<Wool>(account);
+        };
+    }
+
+    #[test_only]
+    public(friend) fun register_coin_test(account: &signer) {
         if (!coin::is_account_registered<Wool>(signer::address_of(account))) {
             coin::register<Wool>(account);
         };
@@ -47,9 +56,6 @@ module woolf_deployer::wool {
         let mint_cap = &borrow_global<Caps>(account_addr).mint;
         let coins_minted = coin::mint<Wool>(amount, mint_cap);
 
-        // if (!coin::is_account_registered<Wool>(to)) {
-        //     coin::register<Wool>(to);
-        // };
         coin::deposit<Wool>(to, coins_minted);
     }
 

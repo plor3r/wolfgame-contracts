@@ -11,16 +11,6 @@ module woolf_deployer::barn {
 
     friend woolf_deployer::woolf;
 
-    #[test_only]
-    use std::signer;
-    #[test_only]
-    use std::string;
-    #[test_only]
-    use woolf_deployer::config;
-    #[test_only]
-    use aptos_token::token;
-
-
     // maximum alpha score for a Wolf
     const MAX_ALPHA: u8 = 8;
 
@@ -52,22 +42,20 @@ module woolf_deployer::barn {
         let i = 0;
         while (i < vector::length<TokenId>(&token_ids)) {
             // TODO transfer token to this
-
             let token_id = vector::borrow(&token_ids, i);
             if (is_sheep(*token_id)) {
                 add_sheep_to_barn(account, *token_id);
             } else {
                 add_wolf_to_pack(account, *token_id);
             };
-
             i = i + 1;
         };
     }
 
-    fun is_sheep(token_id: TokenId): bool {
+    fun is_sheep(_token_id: TokenId): bool {
         // let t = woolf::get_token_traits(token_id);
-        debug::print(&token_id);
-        false
+        // debug::print(&token_id);
+        true
     }
 
     fun add_sheep_to_barn(account: address, token_id: TokenId) acquires Barn {
@@ -97,8 +85,7 @@ module woolf_deployer::barn {
         vector::push_back(token_pack, stake);
     }
 
-    fun alpha_for_wolf(token_id: TokenId): u8 {
-        debug::print(&token_id);
+    fun alpha_for_wolf(_token_id: TokenId): u8 {
         let alpha_index = 0;
         MAX_ALPHA - alpha_index // alpha index is 0-3
     }
@@ -129,20 +116,35 @@ module woolf_deployer::barn {
         @0x0
     }
 
-    // #[test(account = @woolf_deployer)]
-    // fun test_add_sheep_to_barn(account: &signer) acquires Barn {
-    //     let account_addr = signer::address_of(account);
-    //     let token_id = token::create_token_id_raw(
-    //         account_addr,
-    //         config::collection_name_v1(),
-    //         string::utf8(b"123"),
-    //         0
-    //     );
-    //     initialize(account);
-    //     add_sheep_to_barn(account_addr, token_id);
-    //     let barn = borrow_global<Barn>(@woolf_deployer);
-    //     assert!(table::contains(&barn.items, token_id), 1);
-    // }
+    //
+    // Tests
+    //
+    #[test_only]
+    use std::signer;
+    #[test_only]
+    use std::string;
+    #[test_only]
+    use woolf_deployer::config;
+    #[test_only]
+    use aptos_token::token;
+
+    #[test(aptos = @0x1, account = @woolf_deployer)]
+    fun test_add_sheep_to_barn(aptos: &signer, account: &signer) acquires Barn {
+        timestamp::set_time_has_started_for_testing(aptos);
+        // Set the time to a nonzero value to avoid subtraction overflow.
+        timestamp::update_global_time_for_test_secs(100);
+        let account_addr = signer::address_of(account);
+        let token_id = token::create_token_id_raw(
+            account_addr,
+            config::collection_name_v1(),
+            string::utf8(b"123"),
+            0
+        );
+        initialize(account);
+        add_sheep_to_barn(account_addr, token_id);
+        let barn = borrow_global<Barn>(@woolf_deployer);
+        assert!(table::contains(&barn.items, token_id), 1);
+    }
 
     #[test(account = @woolf_deployer)]
     fun test_add_wolf_to_pack(account: &signer) acquires Pack {

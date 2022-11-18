@@ -3,9 +3,10 @@ module woolf_deployer::woolf {
     use std::signer;
     use std::string::String;
     use std::vector;
-    use std::debug;
+    // use std::debug;
     use std::bcs;
     use std::hash;
+    // use std::string;
 
     use aptos_framework::account;
     use aptos_framework::aptos_account;
@@ -46,8 +47,8 @@ module woolf_deployer::woolf {
 
     // testing config
     const MINT_PRICE: u64 = 50000;
-    const MAX_TOKENS: u64 = 5;
-    const PAID_TOKENS: u64 = 1;
+    const MAX_TOKENS: u64 = 10;
+    const PAID_TOKENS: u64 = 2;
     const MAX_SINGLE_MINT: u64 = 10;
 
     // tokenTraits?
@@ -91,6 +92,8 @@ module woolf_deployer::woolf {
     struct Dashboard has key {
         existing_combinations: Table<vector<u8>, TokenId>,
         token_traits: Table<TokenId, SheepWolf>,
+        rarities: vector<vector<u8>>,
+        aliases: vector<vector<u8>>,
     }
 
     fun init_module(admin: &signer) {
@@ -103,15 +106,101 @@ module woolf_deployer::woolf {
         config::initialize_v1(admin, admin_address);
         token_helper::initialize(admin);
         barn::initialize(admin);
+        wool::initialize(admin);
 
         initialize(admin);
     }
 
     fun initialize(account: &signer) {
-        debug::print(account);
+        let rarities: vector<vector<u8>> = vector::empty();
+        let aliases: vector<vector<u8>> = vector::empty();
+        // I know this looks weird but it saves users gas by making lookup O(1)
+        // A.J. Walker's Alias Algorithm
+        // sheep
+        // fur
+
+        vector::push_back(&mut rarities, vector[15, 50, 200, 250, 255]);
+        vector::push_back(&mut aliases, vector[4, 4, 4, 4, 4]);
+        // head
+        vector::push_back(
+            &mut rarities,
+            vector[190, 215, 240, 100, 110, 135, 160, 185, 80, 210, 235, 240, 80, 80, 100, 100, 100, 245, 250, 255]
+        );
+        vector::push_back(&mut aliases, vector[1, 2, 4, 0, 5, 6, 7, 9, 0, 10, 11, 17, 0, 0, 0, 0, 4, 18, 19, 19]);
+        // ears
+        vector::push_back(&mut rarities, vector[255, 30, 60, 60, 150, 156]);
+        vector::push_back(&mut aliases, vector[0, 0, 0, 0, 0, 0]);
+        // eyes
+        vector::push_back(
+            &mut rarities,
+            vector[221, 100, 181, 140, 224, 147, 84, 228, 140, 224, 250, 160, 241, 207, 173, 84, 254, 220, 196, 140, 168, 252, 140, 183, 236, 252, 224, 255]
+        );
+        vector::push_back(
+            &mut aliases,
+            vector[1, 2, 5, 0, 1, 7, 1, 10, 5, 10, 11, 12, 13, 14, 16, 11, 17, 23, 13, 14, 17, 23, 23, 24, 27, 27, 27, 27]
+        );
+        // nose
+        vector::push_back(&mut rarities, vector[175, 100, 40, 250, 115, 100, 185, 175, 180, 255]);
+        vector::push_back(&mut aliases, vector[3, 0, 4, 6, 6, 7, 8, 8, 9, 9]);
+        // mouth
+        vector::push_back(
+            &mut rarities,
+            vector[80, 225, 227, 228, 112, 240, 64, 160, 167, 217, 171, 64, 240, 126, 80, 255]
+        );
+        vector::push_back(&mut aliases, vector[1, 2, 3, 8, 2, 8, 8, 9, 9, 10, 13, 10, 13, 15, 13, 15]);
+        // neck
+        vector::push_back(&mut rarities, vector[255]);
+        vector::push_back(&mut aliases, vector[0]);
+        // feet
+        vector::push_back(
+            &mut rarities,
+            vector[243, 189, 133, 133, 57, 95, 152, 135, 133, 57, 222, 168, 57, 57, 38, 114, 114, 114, 255]
+        );
+        vector::push_back(&mut aliases, vector[1, 7, 0, 0, 0, 0, 0, 10, 0, 0, 11, 18, 0, 0, 0, 1, 7, 11, 18]);
+        // alphaIndex
+        vector::push_back(&mut rarities, vector[255]);
+        vector::push_back(&mut aliases, vector[0]);
+
+        // wolves
+        // fur
+        vector::push_back(&mut rarities, vector[210, 90, 9, 9, 9, 150, 9, 255, 9]);
+        vector::push_back(&mut aliases, vector[5, 0, 0, 5, 5, 7, 5, 7, 5]);
+        // head
+        vector::push_back(&mut rarities, vector[255]);
+        vector::push_back(&mut aliases, vector[0]);
+        // ears
+        vector::push_back(&mut rarities, vector[255]);
+        vector::push_back(&mut aliases, vector[0]);
+        // eyes
+        vector::push_back(
+            &mut rarities,
+            vector[135, 177, 219, 141, 183, 225, 147, 189, 231, 135, 135, 135, 135, 246, 150, 150, 156, 165, 171, 180, 186, 195, 201, 210, 243, 252, 255]
+        );
+        vector::push_back(
+            &mut aliases,
+            vector[1, 2, 3, 4, 5, 6, 7, 8, 13, 3, 6, 14, 15, 16, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 26, 26]
+        );
+        // nose
+        vector::push_back(&mut rarities, vector[255]);
+        vector::push_back(&mut aliases, vector[0]);
+        // mouth
+        vector::push_back(&mut rarities, vector[239, 244, 249, 234, 234, 234, 234, 234, 234, 234, 130, 255, 247]);
+        vector::push_back(&mut aliases, vector[1, 2, 11, 0, 11, 11, 11, 11, 11, 11, 11, 11, 11]);
+        // neck
+        vector::push_back(&mut rarities, vector[75, 180, 165, 120, 60, 150, 105, 195, 45, 225, 75, 45, 195, 120, 255]);
+        vector::push_back(&mut aliases, vector[1, 9, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 14, 12, 14]);
+        // feet
+        vector::push_back(&mut rarities, vector[255]);
+        vector::push_back(&mut aliases, vector[0]);
+        // alphaIndex
+        vector::push_back(&mut rarities, vector[8, 160, 73, 255]);
+        vector::push_back(&mut aliases, vector[2, 3, 3, 3]);
+
         move_to(account, Dashboard {
             existing_combinations: table::new(),
             token_traits: table::new(),
+            rarities: rarities,
+            aliases: aliases,
         });
     }
 
@@ -134,8 +223,9 @@ module woolf_deployer::woolf {
         8000 * config::octas()
     }
 
-    fun mint_to(_receiver: &signer, token_index: u64): TokenId {
-        let token_name: String = utf8_utils::u128_to_string((token_index as u128));
+    fun issue_token(_receiver: &signer, token_index: u64): TokenId {
+        let token_name: String = utf8_utils::to_string(token_index);
+        // let token_name: String = string::utf8(b"1234");
 
         // Create the token, and transfer it to the user
         let tokendata_id = token_helper::ensure_token_data(token_name);
@@ -180,6 +270,7 @@ module woolf_deployer::woolf {
         //     vector::empty<vector<u8>>(),
         //     vector::empty<String>(),
         // );
+        // debug::print(&token_id);
         token_id
     }
 
@@ -195,17 +286,19 @@ module woolf_deployer::woolf {
         if (token_supply < PAID_TOKENS) {
             assert!(token_supply + amount <= PAID_TOKENS, error::out_of_range(EALL_MINTED));
             let price = MINT_PRICE * amount;
-            coin::transfer<AptosCoin>(receiver, config::fund_destination_address(), price);
+            if (false) {
+                coin::transfer<AptosCoin>(receiver, config::fund_destination_address(), price);
+            };
         };
 
         let i = 0;
         let total_wool_cost: u64 = 0;
-        let token_ids: vector<TokenId> = vector::empty();
+        let token_ids: vector<TokenId> = vector::empty<TokenId>();
         let seed: vector<u8>;
         while (i < amount) {
             seed = random::seed(&receiver_addr);
-            let token_index = token_helper::collection_supply() + 1;
-            let token_id = mint_to(receiver, token_index);
+            let token_index = token_helper::collection_supply() + 1; // from 1
+            let token_id = issue_token(receiver, token_index);
             generate(token_id, seed);
 
             let recipient: address = select_recipient(receiver_addr, seed, token_index);
@@ -240,8 +333,8 @@ module woolf_deployer::woolf {
         return thief
     }
 
-    public(friend) fun get_token_traits(token_id: TokenId): SheepWolf {
-        debug::print(&token_id);
+    public(friend) fun get_token_traits(_token_id: TokenId): SheepWolf {
+        // debug::print(&token_id);
         SheepWolf {
             is_sheep: false,
             fur: 1,
@@ -284,11 +377,87 @@ module woolf_deployer::woolf {
         hash
     }
 
-    fun select_traits(seed: vector<u8>): SheepWolf {
-        debug::print(&seed);
+    fun select_traits(_seed: vector<u8>): SheepWolf acquires Dashboard {
+        let dashboard = borrow_global<Dashboard>(@woolf_deployer);
+        let is_sheep = random::rand_u64_range_no_sender(0, 65536) % 10 == 0;
+        let shift = if (is_sheep) 0 else 9;
         SheepWolf {
             is_sheep: false,
-            fur: select_trait((1 as u8), 1),
+            fur: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 0 + shift),
+            head: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 1 + shift),
+            ears: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 2 + shift),
+            eyes: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 3 + shift),
+            nose: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 4 + shift),
+            mouth: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 5 + shift),
+            neck: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 6 + shift),
+            feet: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 7 + shift),
+            alpha_index: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 8 + shift),
+        }
+    }
+
+    fun select_trait(dashboard: &Dashboard, seed: u64, trait_type: u64): u8 {
+        let trait = seed % vector::length(vector::borrow(&dashboard.rarities, trait_type));
+        if (seed < (*vector::borrow(vector::borrow(&dashboard.rarities, trait_type), trait) as u64)) {
+            return (trait as u8)
+        };
+        *vector::borrow(vector::borrow(&dashboard.aliases, trait_type), trait)
+    }
+
+    //
+    // test
+    //
+
+    // #[test_only]
+    // use std::string;
+    #[test_only]
+    use aptos_token::token;
+    // #[test_only]
+    // use aptos_framework::block;
+    #[test_only]
+    use aptos_framework::timestamp;
+
+    #[test_only]
+    fun initialize_for_test(admin: &signer) {
+        let admin_address: address = @woolf_deployer;
+
+        if (!account::exists_at(admin_address)) {
+            aptos_account::create_account(admin_address);
+        };
+
+        config::initialize_v1(admin, admin_address);
+        token_helper::initialize(admin);
+        barn::initialize(admin);
+        wool::initialize(admin);
+
+        initialize(admin);
+    }
+
+    // #[test(aptos = @0x1, account_addr = @woolf_deployer)]
+    // fun test_generate(aptos: &signer, account_addr: address) acquires Dashboard {
+    //     block::initialize_for_test(aptos, 1);
+    //     let token_id = token::create_token_id_raw(
+    //         account_addr,
+    //         config::collection_name_v1(),
+    //         string::utf8(b"123"),
+    //         0
+    //     );
+    //     generate(token_id, random::seed_no_sender());
+    // }
+
+    #[test(aptos = @0x1)]
+    fun test_select_traits(aptos: &signer) acquires Dashboard {
+        timestamp::set_time_has_started_for_testing(aptos);
+        // Set the time to a nonzero value to avoid subtraction overflow.
+        timestamp::update_global_time_for_test_secs(100);
+        // block::initialize_for_test(aptos, 1);
+        select_traits(random::seed_no_sender());
+    }
+
+    #[test]
+    fun test_struct_to_hash() {
+        let sw = SheepWolf {
+            is_sheep: false,
+            fur: 1,
             head: 1,
             ears: 1,
             eyes: 1,
@@ -297,10 +466,57 @@ module woolf_deployer::woolf {
             neck: 1,
             feet: 1,
             alpha_index: 1,
-        }
+        };
+        let hash = struct_to_hash(&sw);
+        // debug::print(&hash);
+        assert!(
+            hash == vector[221, 61, 243, 38, 36, 70, 50, 235, 234, 246, 152,
+                66, 26, 160, 62, 165, 60, 27, 51, 24, 219, 125, 95, 216, 122,
+                202, 224, 140, 185, 217, 181, 187],
+            1
+        );
     }
 
-    fun select_trait(seed: u8, trait_type: u8): u8 {
-        (seed as u8) + trait_type
+    #[test(aptos = @0x1, admin = @woolf_deployer, account = @0x1111)]
+    fun test_mint(aptos: &signer, admin: &signer, account: &signer) acquires Dashboard {
+        timestamp::set_time_has_started_for_testing(aptos);
+        // Set the time to a nonzero value to avoid subtraction overflow.
+        timestamp::update_global_time_for_test_secs(100);
+        // block::initialize_for_test(aptos, 2);
+
+        initialize_for_test(admin);
+
+        aptos_account::create_account(signer::address_of(account));
+        wool::register_coin_test(account);
+        wool::mint(admin, signer::address_of(account), 10 * config::octas());
+
+        assert!(config::is_enabled(), 0);
+        mint(account, 1, false);
+        let token_id = token_helper::build_token_id(1, 0);
+        // debug::print(&token_id);
+        assert!(token_helper::collection_supply() == 1, 1);
+        // debug::print(&token::balance_of(signer::address_of(account), token_id));
+        assert!(token::balance_of(signer::address_of(account), token_id) == 1, 2)
+    }
+
+    #[test(aptos = @0x1, admin = @woolf_deployer, account = @0x1111)]
+    fun test_mint_with_stake(aptos: &signer, admin: &signer, account: &signer) acquires Dashboard {
+        timestamp::set_time_has_started_for_testing(aptos);
+        // Set the time to a nonzero value to avoid subtraction overflow.
+        timestamp::update_global_time_for_test_secs(100);
+        // block::initialize_for_test(aptos, 2);
+        initialize_for_test(admin);
+
+        aptos_account::create_account(signer::address_of(account));
+        wool::register_coin_test(account);
+        wool::mint(admin, signer::address_of(account), 10 * config::octas());
+
+        assert!(config::is_enabled(), 0);
+        mint(account, 1, true);
+        let token_id = token_helper::build_token_id(1, 0);
+        // debug::print(&token_id);
+        assert!(token_helper::collection_supply() == 1, 1);
+        // debug::print(&token::balance_of(signer::address_of(account), token_id));
+        assert!(token::balance_of(signer::address_of(account), token_id) == 0, 2)
     }
 }

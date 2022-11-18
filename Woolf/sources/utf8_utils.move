@@ -3,8 +3,8 @@ module woolf_deployer::utf8_utils {
     use std::string::{Self, String};
     use std::vector;
 
-    /// This turns a u128 into its UTF-8 string equivalent.
-    public fun u128_to_string(value: u128): String {
+    /// @dev Converts a `u64` to its `ascii::String` decimal representation.
+    public fun to_string(value: u64): String {
         if (value == 0) {
             return string::utf8(b"0")
         };

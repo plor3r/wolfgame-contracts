@@ -41,7 +41,7 @@ module woolf_deployer::token_helper {
 
     public(friend) fun initialize(framework: &signer) {
         // Create the resource account for token creation, so we can get it as a signer later
-        let registry_seed = utf8_utils::u128_to_string((timestamp::now_microseconds() as u128));
+        let registry_seed = utf8_utils::to_string(timestamp::now_microseconds());
         string::append(&mut registry_seed, string::utf8(b"registry_seed"));
         let (token_resource, token_signer_cap) = account::create_resource_account(
             framework,
@@ -77,6 +77,20 @@ module woolf_deployer::token_helper {
     ): TokenDataId {
         let collection_name = config::collection_name_v1();
         token::create_token_data_id(token_resource_address, collection_name, token_name)
+    }
+
+    public fun build_token_id(
+        token_index: u64,
+        property_version: u64,
+    ): TokenId acquires CollectionCapability {
+        let token_resource_address = get_token_signer_address();
+        let token_id = token::create_token_id_raw(
+            token_resource_address,
+            config::collection_name_v1(),
+            utf8_utils::to_string(token_index),
+            property_version
+        );
+        token_id
     }
 
     public fun tokendata_exists(token_data_id: &TokenDataId): bool {

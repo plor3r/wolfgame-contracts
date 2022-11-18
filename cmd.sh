@@ -9,8 +9,8 @@ aptos move compile --package-dir Woolf --named-addresses woolf_deployer=${woolf_
 
 aptos move test --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
 
-aptos move publish --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
+aptos move publish --assume-yes --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
 
-aptos move run --function-id ${woolf_deployer}::woolf::mint --args u64:1 bool:false
+aptos move run --assume-yes --function-id ${woolf_deployer}::woolf::mint --args u64:1 bool:true
 
-aptos move run --function-id ${woolf_deployer}::wool::mint --args address:${woolf_deployer} u64:1000000000000
+aptos move run --assume-yes --function-id ${woolf_deployer}::wool::mint --args address:${woolf_deployer} u64:1000000000000
