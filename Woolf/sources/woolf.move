@@ -235,7 +235,7 @@ module woolf_deployer::woolf {
         let rand = random::rand_u64_range_with_seed(seed, 0, 10);
         if (token_index <= PAID_TOKENS || rand > 0)
             return sender; // top 10 bits haven't been used
-        let thief = barn::random_wolf_owner(seed); // 144 bits reserved for trait selection
+        let thief = barn::random_wolf_owner(seed);
         if (thief == @0x0) return sender;
         return thief
     }

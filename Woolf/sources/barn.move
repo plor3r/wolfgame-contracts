@@ -113,17 +113,18 @@ module woolf_deployer::barn {
         let cumulative: u64 = 0;
         // loop through each bucket of Wolves with the same alpha score
         let i = MAX_ALPHA - 3;
+        // let wolves: &vector<Stake> = &vector::empty();
         while (i <= MAX_ALPHA) {
             let wolves = table::borrow(&pack.items, i);
             cumulative = cumulative + vector::length(wolves) * (i as u64);
+            debug::print(&i);
 
             i = i + 1;
             // if the value is not inside of that bucket, keep going
-            if (bucket >= cumulative) {
-                continue
-            };
-            // get the address of a random Wolf with that alpha score
-            return vector::borrow(wolves, rand_u64_with_seed(seed) % vector::length(wolves)).owner
+            if (bucket < cumulative) {
+                // get the address of a random Wolf with that alpha score
+                return vector::borrow(wolves, rand_u64_with_seed(seed) % vector::length(wolves)).owner
+            }
         };
         @0x0
     }
