@@ -23,6 +23,7 @@ module woolf_deployer::woolf {
     use woolf_deployer::config;
     use woolf_deployer::utf8_utils;
     use woolf_deployer::random;
+    use woolf_deployer::traits;
 
     /// The Naming Service contract is not enabled
     const ENOT_ENABLED: u64 = 1;
@@ -107,7 +108,7 @@ module woolf_deployer::woolf {
         token_helper::initialize(admin);
         barn::initialize(admin);
         wool::initialize(admin);
-
+        traits::initialize(admin);
         initialize(admin);
     }
 
@@ -401,6 +402,10 @@ module woolf_deployer::woolf {
             return (trait as u8)
         };
         *vector::borrow(vector::borrow(&dashboard.aliases, trait_type), trait)
+    }
+
+    fun token_uri(token_id: TokenId): String {
+        traits::token_uri(token_id)
     }
 
     //

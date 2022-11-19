@@ -9,6 +9,8 @@ module woolf_deployer::traits {
 
     use woolf_deployer::base64;
 
+    friend woolf_deployer::woolf;
+
     const EMISMATCHED_INPUT: u64 = 0;
 
     // struct to store each trait's data for metadata and rendering
@@ -75,7 +77,7 @@ module woolf_deployer::traits {
         return (false, 1, 1, 1, 1, 1, 1, 1, 1, 1)
     }
 
-    public fun draw_trait(trait: Trait): String {
+    fun draw_trait(trait: Trait): String {
         let s: String = string::utf8(b"");
         string::append_utf8(&mut s, b"<image x=\"4\" y=\"4\" width=\"32\" height=\"32\" image-rendering=\"pixelated\" preserveAspectRatio=\"xMidYMid\" xlink:href=\"data:image/png;base64,");
         string::append(&mut s, trait.png);
@@ -83,7 +85,7 @@ module woolf_deployer::traits {
         s
     }
 
-    public fun draw_trait_or_none(trait: Option<Trait>): String {
+    fun draw_trait_or_none(trait: Option<Trait>): String {
         if (option::is_some(&trait)) {
             draw_trait(option::extract(&mut trait))
         } else {
@@ -200,7 +202,7 @@ module woolf_deployer::traits {
         attributes
     }
 
-    public fun token_uri(token_id: TokenId): String acquires Data {
+    public(friend) fun token_uri(token_id: TokenId): String acquires Data {
         let (is_sheep, _, _, _, _, _, _, _, _, _, ) = get_token_traits(
             token_id
         );
