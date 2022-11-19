@@ -73,8 +73,13 @@ module woolf_deployer::traits {
     }
 
     // TODO replace with woolf traits
-    fun get_token_traits(_token_id: TokenId): (bool, u8, u8, u8, u8, u8, u8, u8, u8, u8) {
+    public fun get_token_traits(_token_id: TokenId): (bool, u8, u8, u8, u8, u8, u8, u8, u8, u8) {
         return (false, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+    }
+
+    public fun is_sheep(_token_id: TokenId): bool {
+        // FIXME
+        false
     }
 
     fun draw_trait(trait: Trait): String {

@@ -12,6 +12,7 @@ module woolf_deployer::barn {
     use woolf_deployer::random;
     use woolf_deployer::wool;
     use woolf_deployer::token_helper;
+    use woolf_deployer::traits;
 
     friend woolf_deployer::woolf;
 
@@ -91,19 +92,13 @@ module woolf_deployer::barn {
         while (i < vector::length<TokenId>(&token_ids)) {
             // TODO transfer token to this
             let token_id = vector::borrow(&token_ids, i);
-            if (is_sheep(*token_id)) {
+            if (traits::is_sheep(*token_id)) {
                 add_sheep_to_barn(account, *token_id);
             } else {
                 add_wolf_to_pack(account, *token_id);
             };
             i = i + 1;
         };
-    }
-
-    fun is_sheep(_token_id: TokenId): bool {
-        // let t = woolf::get_token_traits(token_id);
-        // debug::print(&token_id);
-        true
     }
 
     // adds a single Sheep to the Barn
@@ -136,16 +131,6 @@ module woolf_deployer::barn {
         vector::push_back(token_pack, stake);
     }
 
-    fun update_earnings() acquires Data {
-        let data = borrow_global_mut<Data>(@woolf_deployer);
-        if (data.total_wool_earned < MAXIMUM_GLOBAL_WOOL) {
-            data.total_wool_earned = data.total_wool_earned +
-                (timestamp::now_seconds(
-                ) - data.last_claim_timestamp) * data.total_sheep_staked * DAILY_WOOL_RATE / 86400;
-            data.last_claim_timestamp = timestamp::now_seconds();
-        }
-    }
-
     // add $WOOL to claimable pot for the Pack
     fun pay_wolf_tax(data: &mut Data, amount: u64) {
         // let data = borrow_global_mut<Data>(@woolf_deployer);
@@ -172,7 +157,7 @@ module woolf_deployer::barn {
         let owed: u64 = 0;
         let i: u64 = 0;
         while (i < vector::length(&token_ids)) {
-            if (is_sheep(*vector::borrow(&token_ids, i))) {
+            if (traits::is_sheep(*vector::borrow(&token_ids, i))) {
                 owed = owed + claim_sheep_from_barn(account, *vector::borrow(&token_ids, i), unstake);
             } else {
                 owed = owed + claim_wolf_from_pack(account, *vector::borrow(&token_ids, i), unstake);
@@ -256,9 +241,21 @@ module woolf_deployer::barn {
         owed
     }
 
-    fun alpha_for_wolf(_token_id: TokenId): u8 {
-        let alpha_index = 0;
+    /** ACCOUNTING */
+
+    fun alpha_for_wolf(token_id: TokenId): u8 {
+        let (_, _, _, _, _, _, _, _, _, alpha_index) = traits::get_token_traits(token_id);
         MAX_ALPHA - alpha_index // alpha index is 0-3
+    }
+
+    fun update_earnings() acquires Data {
+        let data = borrow_global_mut<Data>(@woolf_deployer);
+        if (data.total_wool_earned < MAXIMUM_GLOBAL_WOOL) {
+            data.total_wool_earned = data.total_wool_earned +
+                (timestamp::now_seconds(
+                ) - data.last_claim_timestamp) * data.total_sheep_staked * DAILY_WOOL_RATE / 86400;
+            data.last_claim_timestamp = timestamp::now_seconds();
+        }
     }
 
     // chooses a random Wolf thief when a newly minted token is stolen
@@ -277,7 +274,6 @@ module woolf_deployer::barn {
             let wolves = table::borrow(&pack.items, i);
             cumulative = cumulative + vector::length(wolves) * (i as u64);
             debug::print(&i);
-
             i = i + 1;
             // if the value is not inside of that bucket, keep going
             if (bucket < cumulative) {
@@ -286,6 +282,9 @@ module woolf_deployer::barn {
             }
         };
         @0x0
+    }
+
+    public fun assert_unpaused() {
     }
 
     //
@@ -297,6 +296,7 @@ module woolf_deployer::barn {
     use woolf_deployer::config;
     #[test_only]
     use aptos_token::token;
+    use woolf_deployer::traits;
 
     #[test(aptos = @0x1, account = @woolf_deployer)]
     fun test_add_sheep_to_barn(aptos: &signer, account: &signer) acquires Barn, Data {

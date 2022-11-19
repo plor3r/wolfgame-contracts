@@ -3,12 +3,21 @@
 ## Targets
 
 - [x] Wool Erc20 style coin
-- [ ] Mint woolf or sheep
+- [x] Mint woolf or sheep
   - [x] mint NFT
   - [x] transfer coin as fee
-  - [ ] random trait
-  - [ ] random wold or sheep
-- [ ] Set woolf or sheep trait
-- [ ] Set NFT standard format
-- [ ] Barn: Stake
-- [ ] Barn: Unstake
+  - [x] random trait
+  - [x] random wold or sheep
+- [x] Set woolf or sheep trait
+- [x] Set NFT standard format
+- [x] Barn: Stake
+- [x] Barn: Unstake
+- [ ] fix bugs
+
+
+## Current site
+- Ethereum
+  - https://wolf.game/
+- BSC
+  - https://wolfgame.io/
+  - https://wolfbsc.games/
