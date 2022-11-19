@@ -24,10 +24,9 @@ module woolf_deployer::traits {
     struct Data has key {
         trait_types: vector<String>,
         trait_data: Table<u8, Table<u8, Trait>>,
-        // trait_type => id => trait
+        // {trait_type => {id => trait}}
         alphas: vector<vector<u8>>,
     }
-
 
     public(friend) fun initialize(account: &signer) {
         let trait_types: vector<String> = vector[
@@ -71,15 +70,16 @@ module woolf_deployer::traits {
         }
     }
 
+    // TODO replace with woolf traits
     fun get_token_traits(_token_id: TokenId): (bool, u8, u8, u8, u8, u8, u8, u8, u8, u8) {
         return (false, 1, 1, 1, 1, 1, 1, 1, 1, 1)
     }
 
     public fun draw_trait(trait: Trait): String {
         let s: String = string::utf8(b"");
-        // string::append_utf8(&mut s, b"<image x=\"4\" y=\"4\" width=\"32\" height=\"32\" image-rendering=\"pixelated\" preserveAspectRatio=\"xMidYMid\" xlink:href=\"data:image/png;base64,");
+        string::append_utf8(&mut s, b"<image x=\"4\" y=\"4\" width=\"32\" height=\"32\" image-rendering=\"pixelated\" preserveAspectRatio=\"xMidYMid\" xlink:href=\"data:image/png;base64,");
         string::append(&mut s, trait.png);
-        // string::append_utf8(&mut s, b"\"/>");
+        string::append_utf8(&mut s, b"\"/>");
         s
     }
 
@@ -120,7 +120,7 @@ module woolf_deployer::traits {
         ) else option::none<Trait>();
 
         let svg_string: String = string::utf8(b"");
-        // string::append_utf8(&mut svg_string, b"<svg id=\"woolf\" width=\"100%\" height=\"100%\" version=\"1.1\" viewBox=\"0 0 40 40\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
+        string::append_utf8(&mut svg_string, b"<svg id=\"woolf\" width=\"100%\" height=\"100%\" version=\"1.1\" viewBox=\"0 0 40 40\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
         string::append(&mut svg_string, draw_trait_or_none(s0));
         string::append(&mut svg_string, draw_trait_or_none(s1));
         string::append(&mut svg_string, draw_trait_or_none(s2));
@@ -129,22 +129,21 @@ module woolf_deployer::traits {
         string::append(&mut svg_string, draw_trait_or_none(s5));
         string::append(&mut svg_string, draw_trait_or_none(s6));
         string::append(&mut svg_string, draw_trait_or_none(s7));
-        // string::append_utf8(&mut svg_string, b"</svg>");
+        string::append_utf8(&mut svg_string, b"</svg>");
         svg_string
     }
 
     fun attribute_for_type_and_value(trait_type: String, value: String): String {
         let s = string::utf8(b"");
-        // string::append_utf8(&mut s, b"{\"trait_type\":\"");
+        string::append_utf8(&mut s, b"{\"trait_type\":\"");
         string::append(&mut s, trait_type);
-        // string::append_utf8(&mut s, b"\",\"value\":\"");
+        string::append_utf8(&mut s, b"\",\"value\":\"");
         string::append(&mut s, value);
-        // string::append_utf8(&mut s, b"\"}");
+        string::append_utf8(&mut s, b"\"}");
         s
     }
 
     fun compile_attributes(token_id: TokenId): String acquires Data {
-        // (is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index)
         let (is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index) = get_token_traits(
             token_id
         );
@@ -192,11 +191,11 @@ module woolf_deployer::traits {
         let attributes: String = string::utf8(b"");
         string::append_utf8(&mut attributes, b"[");
         string::append(&mut attributes, traits);
-        // string::append_utf8(&mut attributes, b"{\"trait_type\":\"Generation\",\"value\":");
-        // string::append_utf8(&mut attributes, if (is_sheep) b"\"Gen 0\"" else b"\"Gen 1\"");
-        // string::append_utf8(&mut attributes, b"},{\"trait_type\":\"Type\",\"value\":");
-        // string::append_utf8(&mut attributes, if (is_sheep) b"\"Sheep\"" else b"\"Wolf\"");
-        // string::append_utf8(&mut attributes, b"}]");
+        string::append_utf8(&mut attributes, b"{\"trait_type\":\"Generation\",\"value\":");
+        string::append_utf8(&mut attributes, if (is_sheep) b"\"Gen 0\"" else b"\"Gen 1\"");
+        string::append_utf8(&mut attributes, b"},{\"trait_type\":\"Type\",\"value\":");
+        string::append_utf8(&mut attributes, if (is_sheep) b"\"Sheep\"" else b"\"Wolf\"");
+        string::append_utf8(&mut attributes, b"}]");
 
         attributes
     }
@@ -206,13 +205,13 @@ module woolf_deployer::traits {
             token_id
         );
         let metadata = string::utf8(b"");
-        // string::append_utf8(&mut metadata, b"{\"name\": \"");
+        string::append_utf8(&mut metadata, b"{\"name\": \"");
         string::append_utf8(&mut metadata, if (is_sheep) b"Sheep #" else b"Wolf #");
-        // string::append_utf8(&mut metadata, b"tokenId");
-        // string::append_utf8(&mut metadata, b"\", \"description\": \"Thousands of Sheep and Wolves compete on a farm in the metaverse. A tempting prize of $WOOL awaits, with deadly high stakes. All the metadata and images are generated and stored 100% on-chain. No IPFS. NO API. Just the Ethereum blockchain.\", \"image\": \"data:image/svg+xml;base64,");
-        // string::append_utf8(&mut metadata, b"\", \"attributes\":");
+        string::append_utf8(&mut metadata, b"tokenId");
+        string::append_utf8(&mut metadata, b"\", \"description\": \"Thousands of Sheep and Wolves compete on a farm in the metaverse. A tempting prize of $WOOL awaits, with deadly high stakes. All the metadata and images are generated and stored 100% on-chain. No IPFS. NO API. Just the Ethereum blockchain.\", \"image\": \"data:image/svg+xml;base64,");
+        string::append_utf8(&mut metadata, b"\", \"attributes\":");
         string::append_utf8(&mut metadata, base64::encode(string::bytes(&draw_svg(token_id))));
-        // string::append(&mut metadata, compile_attributes(token_id));
+        string::append(&mut metadata, compile_attributes(token_id));
         string::append_utf8(&mut metadata, b"}");
 
         string::insert(&mut metadata, 0, string::utf8(b"data:application/json;base64,"));
