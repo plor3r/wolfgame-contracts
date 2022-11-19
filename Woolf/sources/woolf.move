@@ -493,7 +493,7 @@ module woolf_deployer::woolf {
 
         aptos_account::create_account(signer::address_of(account));
         wool::register_coin_test(account);
-        wool::mint(admin, signer::address_of(account), 10 * config::octas());
+        wool::mint(signer::address_of(account), 10 * config::octas());
 
         assert!(config::is_enabled(), 0);
         mint(account, 1, false);
@@ -514,7 +514,7 @@ module woolf_deployer::woolf {
 
         aptos_account::create_account(signer::address_of(account));
         wool::register_coin_test(account);
-        wool::mint(admin, signer::address_of(account), 10 * config::octas());
+        wool::mint(signer::address_of(account), 10 * config::octas());
 
         assert!(config::is_enabled(), 0);
         mint(account, 1, true);

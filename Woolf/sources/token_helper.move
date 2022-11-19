@@ -3,6 +3,7 @@
 */
 module woolf_deployer::token_helper {
     friend woolf_deployer::woolf;
+    friend woolf_deployer::barn;
 
     use aptos_framework::timestamp;
     use std::string::{Self, String};
@@ -33,6 +34,11 @@ module woolf_deployer::token_helper {
 
     fun get_token_signer(): signer acquires CollectionCapability {
         account::create_signer_with_capability(&borrow_global<CollectionCapability>(@woolf_deployer).capability)
+    }
+
+    public(friend) fun owner_of(token_id: TokenId): address {
+        let (creator, _, _, _) = token::get_token_id_fields(&token_id);
+        creator
     }
 
     public fun collection_name_v1(): String {
@@ -107,6 +113,7 @@ module woolf_deployer::token_helper {
             0
         }
     }
+
     /// gets or creates the token data for the given domain name
     public(friend) fun ensure_token_data(
         token_name: String

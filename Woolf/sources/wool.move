@@ -5,6 +5,7 @@ module woolf_deployer::wool {
     use aptos_framework::coin::{Self, MintCapability, BurnCapability};
 
     friend woolf_deployer::woolf;
+    friend woolf_deployer::barn;
 
     const ENO_CAPABILITIES: u64 = 1;
 
@@ -42,11 +43,10 @@ module woolf_deployer::wool {
         };
     }
 
-    public entry fun mint(
-        account: &signer,
+    public(friend) fun mint(
         to: address, amount: u64
     ) acquires Caps {
-        let account_addr = signer::address_of(account);
+        let account_addr = @woolf_deployer;
 
         assert!(
             has_capability(account_addr),
