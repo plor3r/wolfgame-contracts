@@ -36,7 +36,7 @@ module woolf_deployer::config {
         config: PropertyMap,
     }
 
-    public(friend) fun initialize_v1(framework: &signer, admin_address: address) acquires ConfigurationV1 {
+    public(friend) fun initialize(framework: &signer, admin_address: address) acquires ConfigurationV1 {
         move_to(framework, ConfigurationV1 {
             config: property_map::empty(),
         });

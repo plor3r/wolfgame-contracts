@@ -92,19 +92,21 @@ module woolf_deployer::woolf {
 
     struct Dashboard has key {
         existing_combinations: Table<vector<u8>, TokenId>,
-        token_traits: Table<TokenId, SheepWolf>,
         rarities: vector<vector<u8>>,
         aliases: vector<vector<u8>>,
     }
 
     fun init_module(admin: &signer) {
+        initialize_modules(admin);
+    }
+
+    fun initialize_modules(admin: &signer) {
         let admin_address: address = @woolf_deployer;
 
         if (!account::exists_at(admin_address)) {
             aptos_account::create_account(admin_address);
         };
-
-        config::initialize_v1(admin, admin_address);
+        config::initialize(admin, admin_address);
         token_helper::initialize(admin);
         barn::initialize(admin);
         wool::initialize(admin);
@@ -119,7 +121,6 @@ module woolf_deployer::woolf {
         // A.J. Walker's Alias Algorithm
         // sheep
         // fur
-
         vector::push_back(&mut rarities, vector[15, 50, 200, 250, 255]);
         vector::push_back(&mut aliases, vector[4, 4, 4, 4, 4]);
         // head
@@ -199,7 +200,6 @@ module woolf_deployer::woolf {
 
         move_to(account, Dashboard {
             existing_combinations: table::new(),
-            token_traits: table::new(),
             rarities: rarities,
             aliases: aliases,
         });
@@ -334,29 +334,29 @@ module woolf_deployer::woolf {
         return thief
     }
 
-    public(friend) fun get_token_traits(_token_id: TokenId): SheepWolf {
-        // debug::print(&token_id);
-        SheepWolf {
-            is_sheep: false,
-            fur: 1,
-            head: 1,
-            ears: 1,
-            eyes: 1,
-            nose: 1,
-            mouth: 1,
-            neck: 1,
-            feet: 1,
-            alpha_index: 1,
-        }
-    }
-
     // generates traits for a specific token, checking to make sure it's unique
     fun generate(token_id: TokenId, seed: vector<u8>): SheepWolf acquires Dashboard {
         let t = select_traits(seed);
         let trait_hash = struct_to_hash(&t);
         let dashboard = borrow_global_mut<Dashboard>(@woolf_deployer);
         if (!table::contains(&dashboard.existing_combinations, trait_hash)) {
-            table::upsert<TokenId, SheepWolf>(&mut dashboard.token_traits, token_id, copy t);
+            let SheepWolf {
+                is_sheep: is_sheep, fur: fur, head: head, ears: ears, eyes: eyes,
+                nose: nose, mouth: mouth, neck: neck, feet: feet, alpha_index: alpha_index
+            } = t;
+            traits::update_token_traits(
+                token_id,
+                is_sheep,
+                fur,
+                head,
+                ears,
+                eyes,
+                nose,
+                mouth,
+                neck,
+                feet,
+                alpha_index
+            );
             table::add(&mut dashboard.existing_combinations, trait_hash, token_id);
             return t
         };
@@ -421,25 +421,9 @@ module woolf_deployer::woolf {
     #[test_only]
     use aptos_framework::timestamp;
 
-    #[test_only]
-    fun initialize_for_test(admin: &signer) {
-        let admin_address: address = @woolf_deployer;
-
-        if (!account::exists_at(admin_address)) {
-            aptos_account::create_account(admin_address);
-        };
-
-        config::initialize_v1(admin, admin_address);
-        token_helper::initialize(admin);
-        barn::initialize(admin);
-        wool::initialize(admin);
-
-        initialize(admin);
-    }
-
     // #[test(aptos = @0x1, account_addr = @woolf_deployer)]
     // fun test_generate(aptos: &signer, account_addr: address) acquires Dashboard {
-    //     block::initialize_for_test(aptos, 1);
+    //     block::initialize_modules(aptos, 1);
     //     let token_id = token::create_token_id_raw(
     //         account_addr,
     //         config::collection_name_v1(),
@@ -449,12 +433,13 @@ module woolf_deployer::woolf {
     //     generate(token_id, random::seed_no_sender());
     // }
 
-    #[test(aptos = @0x1)]
-    fun test_select_traits(aptos: &signer) acquires Dashboard {
+    #[test(aptos = @0x1, admin = @woolf_deployer)]
+    fun test_select_traits(aptos: &signer, admin: &signer) acquires Dashboard {
         timestamp::set_time_has_started_for_testing(aptos);
         // Set the time to a nonzero value to avoid subtraction overflow.
         timestamp::update_global_time_for_test_secs(100);
-        // block::initialize_for_test(aptos, 1);
+        // block::initialize_modules(aptos, 1);
+        initialize(admin);
         select_traits(random::seed_no_sender());
     }
 
@@ -487,9 +472,9 @@ module woolf_deployer::woolf {
         timestamp::set_time_has_started_for_testing(aptos);
         // Set the time to a nonzero value to avoid subtraction overflow.
         timestamp::update_global_time_for_test_secs(100);
-        // block::initialize_for_test(aptos, 2);
+        // block::initialize_modules(aptos, 2);
 
-        initialize_for_test(admin);
+        initialize_modules(admin);
 
         aptos_account::create_account(signer::address_of(account));
         wool::register_coin_test(account);
@@ -509,8 +494,8 @@ module woolf_deployer::woolf {
         timestamp::set_time_has_started_for_testing(aptos);
         // Set the time to a nonzero value to avoid subtraction overflow.
         timestamp::update_global_time_for_test_secs(100);
-        // block::initialize_for_test(aptos, 2);
-        initialize_for_test(admin);
+        // block::initialize_modules(aptos, 2);
+        initialize_modules(admin);
 
         aptos_account::create_account(signer::address_of(account));
         wool::register_coin_test(account);

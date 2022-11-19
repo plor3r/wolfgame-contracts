@@ -296,7 +296,6 @@ module woolf_deployer::barn {
     use woolf_deployer::config;
     #[test_only]
     use aptos_token::token;
-    use woolf_deployer::traits;
 
     #[test(aptos = @0x1, account = @woolf_deployer)]
     fun test_add_sheep_to_barn(aptos: &signer, account: &signer) acquires Barn, Data {

@@ -28,6 +28,20 @@ module woolf_deployer::traits {
         trait_data: Table<u8, Table<u8, Trait>>,
         // {trait_type => {id => trait}}
         alphas: vector<vector<u8>>,
+        token_traits: Table<TokenId, SheepWolf>,
+    }
+
+    struct SheepWolf has drop, store, copy, key {
+        is_sheep: bool,
+        fur: u8,
+        head: u8,
+        ears: u8,
+        eyes: u8,
+        nose: u8,
+        mouth: u8,
+        neck: u8,
+        feet: u8,
+        alpha_index: u8,
     }
 
     public(friend) fun initialize(account: &signer) {
@@ -45,7 +59,26 @@ module woolf_deployer::traits {
         let trait_data: Table<u8, Table<u8, Trait>> = table::new();
         let alphas = vector[b"8", b"7", b"6", b"5"];
 
-        move_to(account, Data { trait_types, trait_data, alphas });
+        move_to(account, Data { trait_types, trait_data, alphas, token_traits: table::new() });
+    }
+
+    public(friend) fun update_token_traits(
+        token_id: TokenId,
+        is_sheep: bool,
+        fur: u8,
+        head: u8,
+        ears: u8,
+        eyes: u8,
+        nose: u8,
+        mouth: u8,
+        neck: u8,
+        feet: u8,
+        alpha_index: u8
+    ) acquires Data {
+        let data = borrow_global_mut<Data>(@woolf_deployer);
+        table::upsert(&mut data.token_traits, token_id, SheepWolf {
+            is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index,
+        });
     }
 
     public entry fun upload_traits(
@@ -225,8 +258,9 @@ module woolf_deployer::traits {
         metadata
     }
 
-    #[test]
-    fun test_upload_traits() acquires Data {
+    #[test(admin=@woolf_deployer)]
+    fun test_upload_traits(admin: &signer) acquires Data {
+        initialize(admin);
         let trait_type: u8 = 8;
         let trait_ids: vector<u8> = vector[2, 3];
         let traits: vector<Trait> = vector[
