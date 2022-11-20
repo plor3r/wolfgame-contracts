@@ -1,17 +1,21 @@
 module woolf_deployer::traits {
-
+    use std::error;
     use std::string::{Self, String};
     use std::vector;
     use std::option::{Self, Option};
     use aptos_std::table::Table;
     use aptos_std::table;
-    use aptos_token::token::TokenId;
+    use aptos_token::token::{Self, TokenId};
+    use aptos_token::property_map;
 
     use woolf_deployer::base64;
+    use woolf_deployer::token_helper;
 
     friend woolf_deployer::woolf;
+    friend woolf_deployer::barn;
 
-    const EMISMATCHED_INPUT: u64 = 0;
+    const EMISMATCHED_INPUT: u64 = 1;
+    const ETOKEN_NOT_FOUND: u64 = 2;
 
     // struct to store each trait's data for metadata and rendering
     struct Trait has store, drop, copy {
@@ -43,6 +47,8 @@ module woolf_deployer::traits {
         feet: u8,
         alpha_index: u8,
     }
+
+    const A: vector<vector<u8>> = vector[b"12", b"2343"];
 
     public(friend) fun initialize(account: &signer) {
         let trait_types: vector<String> = vector[
@@ -86,7 +92,7 @@ module woolf_deployer::traits {
         trait_ids: vector<u8>,
         traits: vector<Trait>
     ) acquires Data {
-        assert!(vector::length(&trait_ids) == vector::length(&traits), EMISMATCHED_INPUT);
+        assert!(vector::length(&trait_ids) == vector::length(&traits), error::invalid_argument(EMISMATCHED_INPUT));
         let data = borrow_global_mut<Data>(@woolf_deployer);
         let i = 0;
         let trait_data_table;
@@ -105,13 +111,31 @@ module woolf_deployer::traits {
         }
     }
 
-    // TODO replace with woolf traits
-    public fun get_token_traits(_token_id: TokenId): (bool, u8, u8, u8, u8, u8, u8, u8, u8, u8) {
-        return (false, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+    public fun get_token_traits(token_id: TokenId): (bool, u8, u8, u8, u8, u8, u8, u8, u8, u8) acquires Data {
+        let token_creator = token_helper::get_token_signer_address();
+        let properties = token::get_property_map(token_creator, token_id);
+        let data = borrow_global_mut<Data>(@woolf_deployer);
+
+        let is_sheep = property_map::read_bool(&properties, &string::utf8(b"IsSheep"));
+        let fur = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 0));
+        let head = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 1));
+        let ears = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 2));
+        let eyes = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 3));
+        let nose = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 4));
+        let mouth = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 5));
+        let neck = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 6));
+        let feet = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 7));
+        let alpha_index = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 8));
+
+        (is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index)
     }
 
-    public fun is_sheep(_token_id: TokenId): bool {
-        // FIXME
+    public fun is_sheep(token_id: TokenId): bool acquires Data {
+        let data = borrow_global<Data>(@woolf_deployer);
+        if (table::contains(&data.token_traits, token_id)) {
+            let sw = table::borrow(&data.token_traits, token_id);
+            return sw.is_sheep
+        };
         false
     }
 

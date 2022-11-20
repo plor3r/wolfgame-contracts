@@ -1,7 +1,7 @@
 #!/bin/bash
 set -x
 
-woolf_deployer=0xd403b2ad63581c89ace407c4ed6834a6fc544163a71a39c9f57cf432e7a852d6
+woolf_deployer=0x68ad9b69df44984ba94baf5ba75d45566e3a8cfbdc647eedb8b5aa50dac1b2db
 
 aptos account fund-with-faucet --account ${woolf_deployer}
 
@@ -15,4 +15,8 @@ aptos move publish --assume-yes --package-dir Woolf --named-addresses woolf_depl
 aptos move run --assume-yes --function-id ${woolf_deployer}::woolf::mint --args u64:1 bool:false
 
 # mint wool coin
-aptos move run --assume-yes --function-id ${woolf_deployer}::wool::mint --args address:${woolf_deployer} u64:1000000000000
+aptos move run --assume-yes --function-id ${woolf_deployer}::wool::mint_to --args address:${woolf_deployer} u64:1000000000000
+
+
+## download source code
+#aptos move download --url https://fullnode.devnet.aptoslabs.com --account ${woolf_deployer} --output-dir awolf --package woolf

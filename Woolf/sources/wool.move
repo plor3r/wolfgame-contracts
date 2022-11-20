@@ -8,8 +8,7 @@ module woolf_deployer::wool {
     friend woolf_deployer::barn;
 
     const ENO_CAPABILITIES: u64 = 1;
-
-    const DEPLOYER: address = @woolf_deployer;
+    const ENOT_ADMIN: u64 = 2;
 
     struct Wool {}
 
@@ -26,7 +25,7 @@ module woolf_deployer::wool {
         coin::register<Wool>(admin);
     }
 
-    public fun has_capability(account_addr: address): bool {
+    fun has_capability(account_addr: address): bool {
         exists<Caps>(account_addr)
     }
 
@@ -43,7 +42,7 @@ module woolf_deployer::wool {
         };
     }
 
-    public(friend) fun mint(
+    public(friend) fun mint_internal(
         to: address, amount: u64
     ) acquires Caps {
         let account_addr = @woolf_deployer;
@@ -59,15 +58,25 @@ module woolf_deployer::wool {
         coin::deposit<Wool>(to, coins_minted);
     }
 
-    public entry fun burn_from(account_addr: address, amount: u64) acquires Caps {
+    public entry fun mint_to(account: &signer, to: address, amount: u64) acquires Caps {
+        assert!(signer::address_of(account) == @woolf_deployer, error::permission_denied(ENOT_ADMIN));
+        mint_internal(to, amount);
+    }
+
+    // Admin burn
+    public entry fun burn_from(account: &signer, from: address, amount: u64) acquires Caps {
+        let account_addr = signer::address_of(account);
+        assert!(account_addr == @woolf_deployer, error::permission_denied(ENOT_ADMIN));
+        let admin = @woolf_deployer;
         assert!(
             has_capability(account_addr),
             error::not_found(ENO_CAPABILITIES),
         );
-        let burn_cap = &borrow_global<Caps>(account_addr).burn;
-        coin::burn_from<Wool>(account_addr, amount, burn_cap);
+        let burn_cap = &borrow_global<Caps>(admin).burn;
+        coin::burn_from<Wool>(from, amount, burn_cap);
     }
 
+    // burn self
     public entry fun burn(
         account: &signer,
         amount: u64,

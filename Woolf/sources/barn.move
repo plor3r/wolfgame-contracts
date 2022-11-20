@@ -165,7 +165,7 @@ module woolf_deployer::barn {
             i = i + 1;
         };
         if (owed == 0) { return };
-        wool::mint(signer::address_of(account), owed);
+        wool::mint_internal(signer::address_of(account), owed);
     }
 
     // realize $WOOL earnings for a single Sheep and optionally unstake it
@@ -284,8 +284,7 @@ module woolf_deployer::barn {
         @0x0
     }
 
-    public fun assert_unpaused() {
-    }
+    public fun assert_unpaused() {}
 
     //
     // Tests
@@ -315,20 +314,29 @@ module woolf_deployer::barn {
         assert!(table::contains(&barn.items, token_id), 1);
     }
 
-    #[test(account = @woolf_deployer)]
-    fun test_add_wolf_to_pack(account: &signer) acquires Pack, Data {
+    #[test(aptos = @0x1, admin = @woolf_deployer, account = @0x1111)]
+    fun test_add_wolf_to_pack(aptos: &signer, admin: &signer, account: &signer) acquires Pack, Data {
+        timestamp::set_time_has_started_for_testing(aptos);
+        // Set the time to a nonzero value to avoid subtraction overflow.
+        timestamp::update_global_time_for_test_secs(100);
+        token_helper::initialize(admin);
+        initialize(admin);
+        traits::initialize(admin);
+
         let account_addr = signer::address_of(account);
         let token_id = token::create_token_id_raw(
-            account_addr,
+            token_helper::get_token_signer_address(),
             config::collection_name_v1(),
             string::utf8(b"123"),
             0
         );
-        initialize(account);
+        // debug::print(&token_id);
+
         add_wolf_to_pack(account_addr, token_id);
         let alpha = alpha_for_wolf(token_id);
         let pack = borrow_global_mut<Pack>(@woolf_deployer);
         let token_pack = table::borrow(&mut pack.items, alpha);
+        debug::print(token_pack);
         assert!(vector::length(token_pack) == 1, 1);
     }
 }

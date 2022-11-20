@@ -154,19 +154,10 @@ module woolf_deployer::token_helper {
         let token_mutate_config = token::create_token_mutability_config(
             &vector<bool>[ false, true, true, false, true ]
         );
-
-        // let type = property_map::create_property_value(&type);
-        // let now = property_map::create_property_value(&timestamp::now_seconds());
-        // let property_keys: vector<String> = vector[config::config_key_creation_time_sec(), config::config_key_type()];
-        // let property_values: vector<vector<u8>> = vector[property_map::borrow_value(&now), property_map::borrow_value(
-        //     &type
-        // )];
-        // let property_types: vector<String> = vector[property_map::borrow_type(&now), property_map::borrow_type(&type)];
-
+        // update
         let property_keys: vector<String> = vector[];
         let property_values: vector<vector<u8>> = vector[];
         let property_types: vector<String> = vector[];
-
 
         token::create_tokendata(
             token_resource,
@@ -193,6 +184,27 @@ module woolf_deployer::token_helper {
         assert!(token::check_collection_exists(signer::address_of(&token_resource), collection_name), 125);
 
         token::mint_token(&token_resource, tokendata_id, 1)
+    }
+
+    public(friend) fun set_token_props(
+        token_owner: address,
+        property_keys: vector<String>,
+        property_values: vector<vector<u8>>,
+        property_types: vector<String>,
+        token_id: TokenId
+    ): TokenId acquires CollectionCapability {
+        let token_resource = get_token_signer();
+
+        // At this point, property_version is 0
+        // This will create a _new_ token with property_version == max_property_version of the tokendata, and with the properties we just set
+        token::mutate_one_token(
+            &token_resource,
+            token_owner,
+            token_id,
+            property_keys,
+            property_values,
+            property_types
+        )
     }
 
     public(friend) fun transfer_token_to(sign: &signer, token_id: TokenId) acquires CollectionCapability {

@@ -107,13 +107,4 @@ module woolf_deployer::base64 {
         assert!(code == b"MQ==", 1007);
         assert!(str == decode_str, 1008);
     }
-
-    #[test]
-    fun test_utf8() {
-        use std::debug;
-        let str = x"E6B189";
-        debug::print(&str);
-        debug::print(&encode(&str));
-        debug::print(&b"5rGJ");
-    }
 }

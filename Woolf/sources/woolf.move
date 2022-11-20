@@ -1,12 +1,11 @@
 module woolf_deployer::woolf {
     use std::error;
     use std::signer;
-    use std::string::String;
+    use std::string::{Self, String};
     use std::vector;
     // use std::debug;
     use std::bcs;
     use std::hash;
-    // use std::string;
 
     use aptos_framework::account;
     use aptos_framework::aptos_account;
@@ -16,6 +15,7 @@ module woolf_deployer::woolf {
     // use aptos_framework::timestamp;
     use aptos_std::table::{Self, Table};
     use aptos_token::token::{TokenDataId, TokenId};
+    use aptos_token::property_map;
 
     use woolf_deployer::barn;
     use woolf_deployer::wool;
@@ -91,7 +91,7 @@ module woolf_deployer::woolf {
     }
 
     struct Dashboard has key {
-        existing_combinations: Table<vector<u8>, TokenId>,
+        existing_combinations: Table<vector<u8>, bool>,
         rarities: vector<vector<u8>>,
         aliases: vector<vector<u8>>,
     }
@@ -200,8 +200,8 @@ module woolf_deployer::woolf {
 
         move_to(account, Dashboard {
             existing_combinations: table::new(),
-            rarities: rarities,
-            aliases: aliases,
+            rarities,
+            aliases,
         });
     }
 
@@ -224,7 +224,7 @@ module woolf_deployer::woolf {
         8000 * config::octas()
     }
 
-    fun issue_token(_receiver: &signer, token_index: u64): TokenId {
+    fun issue_token(_receiver: &signer, token_index: u64, t: SheepWolf): TokenId {
         let token_name: String = utf8_utils::to_string(token_index);
         // let token_name: String = string::utf8(b"1234");
 
@@ -232,16 +232,23 @@ module woolf_deployer::woolf {
         let tokendata_id = token_helper::ensure_token_data(token_name);
         let token_id = token_helper::create_token(tokendata_id);
 
-        // let (property_keys, property_values, property_types) = get_name_property_map(
-        //     subdomain_name,
-        //     name_expiration_time_secs
-        // );
-        // token_id = token_helper::set_token_props(
-        //     token_helper::get_token_signer_address(),
-        //     property_keys,
-        //     property_values,
-        //     property_types,
-        //     token_id
+        let SheepWolf {
+            is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index
+        } = t;
+        let (property_keys, property_values, property_types) = get_name_property_map(
+            is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index
+        );
+        token_id = token_helper::set_token_props(
+            token_helper::get_token_signer_address(),
+            property_keys,
+            property_values,
+            property_types,
+            token_id
+        );
+
+        // // TODO keep or delete
+        // traits::update_token_traits(
+        //     token_id, is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index
         // );
 
         // // mint token to the receiver
@@ -282,6 +289,7 @@ module woolf_deployer::woolf {
         assert!(amount > 0 && amount <= MAX_SINGLE_MINT, error::out_of_range(EINVALID_MINTING));
 
         let token_supply = token_helper::collection_supply();
+        debug::print(&token_supply);
         assert!(token_supply + amount <= MAX_TOKENS, error::out_of_range(EALL_MINTED));
 
         if (token_supply < PAID_TOKENS) {
@@ -299,9 +307,10 @@ module woolf_deployer::woolf {
         while (i < amount) {
             seed = random::seed(&receiver_addr);
             let token_index = token_helper::collection_supply() + 1; // from 1
-            let token_id = issue_token(receiver, token_index);
-            generate(token_id, seed);
 
+            let sheep_wolf_traits = generate_traits(seed);
+            let token_id = issue_token(receiver, token_index, sheep_wolf_traits);
+            debug::print(&token_id);
             let recipient: address = select_recipient(receiver_addr, seed, token_index);
             if (!stake || recipient != receiver_addr) {
                 token_helper::transfer_token_to(receiver, token_id);
@@ -315,7 +324,7 @@ module woolf_deployer::woolf {
         };
         if (total_wool_cost > 0) {
             // burn WOOL
-            wool::burn_from(receiver_addr, total_wool_cost);
+            wool::burn(receiver, total_wool_cost);
         };
 
         if (stake) {
@@ -335,32 +344,15 @@ module woolf_deployer::woolf {
     }
 
     // generates traits for a specific token, checking to make sure it's unique
-    fun generate(token_id: TokenId, seed: vector<u8>): SheepWolf acquires Dashboard {
+    fun generate_traits(seed: vector<u8>): SheepWolf acquires Dashboard {
         let t = select_traits(seed);
         let trait_hash = struct_to_hash(&t);
         let dashboard = borrow_global_mut<Dashboard>(@woolf_deployer);
         if (!table::contains(&dashboard.existing_combinations, trait_hash)) {
-            let SheepWolf {
-                is_sheep: is_sheep, fur: fur, head: head, ears: ears, eyes: eyes,
-                nose: nose, mouth: mouth, neck: neck, feet: feet, alpha_index: alpha_index
-            } = t;
-            traits::update_token_traits(
-                token_id,
-                is_sheep,
-                fur,
-                head,
-                ears,
-                eyes,
-                nose,
-                mouth,
-                neck,
-                feet,
-                alpha_index
-            );
-            table::add(&mut dashboard.existing_combinations, trait_hash, token_id);
+            table::add(&mut dashboard.existing_combinations, trait_hash, true);
             return t
         };
-        generate(token_id, random::seed_no_sender())
+        generate_traits(random::seed_no_sender())
     }
 
     fun struct_to_hash(s: &SheepWolf): vector<u8> {
@@ -404,9 +396,72 @@ module woolf_deployer::woolf {
         *vector::borrow(vector::borrow(&dashboard.aliases, trait_type), trait)
     }
 
-    fun token_uri(token_id: TokenId): String {
+    public fun token_uri(token_id: TokenId): String {
         traits::token_uri(token_id)
     }
+
+    public fun get_name_property_map(
+        is_sheep: bool,
+        fur: u8,
+        head: u8,
+        ears: u8,
+        eyes: u8,
+        nose: u8,
+        mouth: u8,
+        neck: u8,
+        feet: u8,
+        alpha_index: u8
+    ): (vector<String>, vector<vector<u8>>, vector<String>) {
+        let is_sheep_value = property_map::create_property_value(&is_sheep);
+        let fur_value = property_map::create_property_value(&fur);
+        let head_value = property_map::create_property_value(&head);
+        let ears_value = property_map::create_property_value(&ears);
+        let eyes_value = property_map::create_property_value(&eyes);
+        let nose_value = property_map::create_property_value(&nose);
+        let mouth_value = property_map::create_property_value(&mouth);
+        let neck_value = property_map::create_property_value(&neck);
+        let feet_value = property_map::create_property_value(&feet);
+        let alpha_value = property_map::create_property_value(&alpha_index);
+
+        let property_keys: vector<String> = vector[
+            string::utf8(b"IsSheep"),
+            string::utf8(b"Fur"),
+            string::utf8(b"Head"),
+            string::utf8(b"Ears"),
+            string::utf8(b"Eyes"),
+            string::utf8(b"Nose"),
+            string::utf8(b"Mouth"),
+            string::utf8(b"Neck"),
+            string::utf8(b"Feet"),
+            string::utf8(b"Alpha"),
+        ];
+        let property_values: vector<vector<u8>> = vector[
+            property_map::borrow_value(&is_sheep_value),
+            property_map::borrow_value(&fur_value),
+            property_map::borrow_value(&head_value),
+            property_map::borrow_value(&ears_value),
+            property_map::borrow_value(&eyes_value),
+            property_map::borrow_value(&nose_value),
+            property_map::borrow_value(&mouth_value),
+            property_map::borrow_value(&neck_value),
+            property_map::borrow_value(&feet_value),
+            property_map::borrow_value(&alpha_value),
+        ];
+        let property_types: vector<String> = vector[
+            property_map::borrow_type(&is_sheep_value),
+            property_map::borrow_type(&fur_value),
+            property_map::borrow_type(&head_value),
+            property_map::borrow_type(&ears_value),
+            property_map::borrow_type(&eyes_value),
+            property_map::borrow_type(&nose_value),
+            property_map::borrow_type(&mouth_value),
+            property_map::borrow_type(&neck_value),
+            property_map::borrow_type(&feet_value),
+            property_map::borrow_type(&alpha_value),
+        ];
+        (property_keys, property_values, property_types)
+    }
+
 
     //
     // test
@@ -420,6 +475,7 @@ module woolf_deployer::woolf {
     // use aptos_framework::block;
     #[test_only]
     use aptos_framework::timestamp;
+    use aptos_std::debug;
 
     // #[test(aptos = @0x1, account_addr = @woolf_deployer)]
     // fun test_generate(aptos: &signer, account_addr: address) acquires Dashboard {
@@ -477,8 +533,8 @@ module woolf_deployer::woolf {
         initialize_modules(admin);
 
         aptos_account::create_account(signer::address_of(account));
-        wool::register_coin_test(account);
-        wool::mint(signer::address_of(account), 10 * config::octas());
+        wool::register_coin(account);
+        wool::mint_internal(signer::address_of(account), 10 * config::octas());
 
         assert!(config::is_enabled(), 0);
         mint(account, 1, false);
@@ -498,8 +554,8 @@ module woolf_deployer::woolf {
         initialize_modules(admin);
 
         aptos_account::create_account(signer::address_of(account));
-        wool::register_coin_test(account);
-        wool::mint(signer::address_of(account), 10 * config::octas());
+        wool::register_coin(account);
+        wool::mint_internal(signer::address_of(account), 10 * config::octas());
 
         assert!(config::is_enabled(), 0);
         mint(account, 1, true);
