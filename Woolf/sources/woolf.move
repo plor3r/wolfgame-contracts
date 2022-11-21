@@ -225,37 +225,39 @@ module woolf_deployer::woolf {
     }
 
     fun issue_token(_receiver: &signer, token_index: u64, t: SheepWolf): TokenId {
-        let token_name: String = utf8_utils::to_string(token_index);
-        // let token_name: String = string::utf8(b"1234");
+        let SheepWolf {
+            is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index
+        } = t;
+        let token_name = string::utf8(if (is_sheep) b"Sheep #" else b"Wolf #");
+        string::append(&mut token_name, utf8_utils::to_string(token_index));
 
         // Create the token, and transfer it to the user
         let tokendata_id = token_helper::ensure_token_data(token_name);
         let token_id = token_helper::create_token(tokendata_id);
 
-        let SheepWolf {
-            is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index
-        } = t;
         let (property_keys, property_values, property_types) = get_name_property_map(
             is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index
         );
+        let creator_addr = token_helper::get_token_signer_address();
         token_id = token_helper::set_token_props(
-            token_helper::get_token_signer_address(),
+            creator_addr,
             property_keys,
             property_values,
             property_types,
             token_id
         );
 
+        // set token_uri
+        let _token_uri_string = traits::token_uri(token_id);
+        let token_uri_string = string::utf8(b"ipfs://QmaXzZhcYnsisuue5WRdQDH6FDvqkLQX1NckLqBYeYYEfm/1.json");
+        let creator= token_helper::get_token_signer();
+        token_helper::set_token_uri(&creator, tokendata_id, token_uri_string);
+
         // // TODO keep or delete
         // traits::update_token_traits(
         //     token_id, is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index
         // );
 
-        // // mint token to the receiver
-        // let resource_signer = account::create_signer_with_capability(&collection_token_minter.signer_cap);
-        // let token_id = token::mint_token(&resource_signer, collection_token_minter.token_data_id, 1);
-        // token::direct_transfer(&resource_signer, receiver, token_id, 1);
-        //
         // event::emit_event<TokenMintingEvent>(
         //     &mut collection_token_minter.token_minting_events,
         //     TokenMintingEvent {
@@ -263,22 +265,7 @@ module woolf_deployer::woolf {
         //         token_data_id: collection_token_minter.token_data_id,
         //     }
         // );
-        //
-        // // mutate the token properties to update the property version of this token
-        // let (creator_address, collection, name) = token::get_token_data_id_fields(&collection_token_minter.token_data_id);
-        // token::mutate_token_properties(
-        //     &resource_signer,
-        //     receiver_addr,
-        //     creator_address,
-        //     collection,
-        //     name,
-        //     0, // token_property_version
-        //     1, // amount
-        //     vector::empty<String>(),
-        //     vector::empty<vector<u8>>(),
-        //     vector::empty<String>(),
-        // );
-        // debug::print(&token_id);
+
         token_id
     }
 
@@ -289,7 +276,6 @@ module woolf_deployer::woolf {
         assert!(amount > 0 && amount <= MAX_SINGLE_MINT, error::out_of_range(EINVALID_MINTING));
 
         let token_supply = token_helper::collection_supply();
-        debug::print(&token_supply);
         assert!(token_supply + amount <= MAX_TOKENS, error::out_of_range(EALL_MINTED));
 
         if (token_supply < PAID_TOKENS) {
@@ -310,7 +296,6 @@ module woolf_deployer::woolf {
 
             let sheep_wolf_traits = generate_traits(seed);
             let token_id = issue_token(receiver, token_index, sheep_wolf_traits);
-            debug::print(&token_id);
             let recipient: address = select_recipient(receiver_addr, seed, token_index);
             if (!stake || recipient != receiver_addr) {
                 token_helper::transfer_token_to(receiver, token_id);
@@ -376,15 +361,15 @@ module woolf_deployer::woolf {
         let shift = if (is_sheep) 0 else 9;
         SheepWolf {
             is_sheep: false,
-            fur: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 0 + shift),
-            head: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 1 + shift),
-            ears: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 2 + shift),
-            eyes: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 3 + shift),
-            nose: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 4 + shift),
-            mouth: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 5 + shift),
-            neck: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 6 + shift),
-            feet: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 7 + shift),
-            alpha_index: select_trait(dashboard, random::rand_u64_range_no_sender(0, 65536), 8 + shift),
+            fur: select_trait(dashboard, random::rand_u64_range_no_sender(0, 255), 0 + shift),
+            head: select_trait(dashboard, random::rand_u64_range_no_sender(0, 255), 1 + shift),
+            ears: select_trait(dashboard, random::rand_u64_range_no_sender(0, 255), 2 + shift),
+            eyes: select_trait(dashboard, random::rand_u64_range_no_sender(0, 255), 3 + shift),
+            nose: select_trait(dashboard, random::rand_u64_range_no_sender(0, 255), 4 + shift),
+            mouth: select_trait(dashboard, random::rand_u64_range_no_sender(0, 255), 5 + shift),
+            neck: select_trait(dashboard, random::rand_u64_range_no_sender(0, 255), 6 + shift),
+            feet: select_trait(dashboard, random::rand_u64_range_no_sender(0, 255), 7 + shift),
+            alpha_index: select_trait(dashboard, random::rand_u64_range_no_sender(0, 255), 8 + shift),
         }
     }
 
@@ -401,16 +386,7 @@ module woolf_deployer::woolf {
     }
 
     public fun get_name_property_map(
-        is_sheep: bool,
-        fur: u8,
-        head: u8,
-        ears: u8,
-        eyes: u8,
-        nose: u8,
-        mouth: u8,
-        neck: u8,
-        feet: u8,
-        alpha_index: u8
+        is_sheep: bool, fur: u8, head: u8, ears: u8, eyes: u8, nose: u8, mouth: u8, neck: u8, feet: u8, alpha_index: u8
     ): (vector<String>, vector<vector<u8>>, vector<String>) {
         let is_sheep_value = property_map::create_property_value(&is_sheep);
         let fur_value = property_map::create_property_value(&fur);
@@ -475,7 +451,6 @@ module woolf_deployer::woolf {
     // use aptos_framework::block;
     #[test_only]
     use aptos_framework::timestamp;
-    use aptos_std::debug;
 
     // #[test(aptos = @0x1, account_addr = @woolf_deployer)]
     // fun test_generate(aptos: &signer, account_addr: address) acquires Dashboard {

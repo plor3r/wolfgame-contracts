@@ -32,7 +32,7 @@ module woolf_deployer::token_helper {
         account::get_signer_capability_address(&borrow_global<CollectionCapability>(@woolf_deployer).capability)
     }
 
-    fun get_token_signer(): signer acquires CollectionCapability {
+    public(friend) fun get_token_signer(): signer acquires CollectionCapability {
         account::create_signer_with_capability(&borrow_global<CollectionCapability>(@woolf_deployer).capability)
     }
 
@@ -205,6 +205,10 @@ module woolf_deployer::token_helper {
             property_values,
             property_types
         )
+    }
+
+    public(friend) fun set_token_uri(creator: &signer, token_data_id: token::TokenDataId, uri_string: String) {
+        token::mutate_tokendata_uri(creator, token_data_id, uri_string);
     }
 
     public(friend) fun transfer_token_to(sign: &signer, token_id: TokenId) acquires CollectionCapability {

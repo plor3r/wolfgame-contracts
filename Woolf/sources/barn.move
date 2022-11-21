@@ -7,7 +7,7 @@ module woolf_deployer::barn {
     use aptos_framework::timestamp;
     use aptos_token::token::TokenId;
     use aptos_std::table::{Self, Table};
-    use aptos_std::debug;
+    // use aptos_std::debug;
 
     use woolf_deployer::random;
     use woolf_deployer::wool;
@@ -273,7 +273,6 @@ module woolf_deployer::barn {
         while (i <= MAX_ALPHA) {
             let wolves = table::borrow(&pack.items, i);
             cumulative = cumulative + vector::length(wolves) * (i as u64);
-            debug::print(&i);
             i = i + 1;
             // if the value is not inside of that bucket, keep going
             if (bucket < cumulative) {
@@ -336,7 +335,6 @@ module woolf_deployer::barn {
         let alpha = alpha_for_wolf(token_id);
         let pack = borrow_global_mut<Pack>(@woolf_deployer);
         let token_pack = table::borrow(&mut pack.items, alpha);
-        debug::print(token_pack);
         assert!(vector::length(token_pack) == 1, 1);
     }
 }
