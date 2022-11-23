@@ -16,6 +16,7 @@ module woolf_deployer::token_helper {
     use aptos_framework::account::{Self, SignerCapability};
     use woolf_deployer::config;
     use woolf_deployer::utf8_utils;
+    // use aptos_std::debug;
     // use aptos_framework::reconfiguration::last_reconfiguration_time;
 
     const COLLECTION_NAME_V1: vector<u8> = b"Woolf Game NFT";
@@ -86,14 +87,14 @@ module woolf_deployer::token_helper {
     }
 
     public fun build_token_id(
-        token_index: u64,
+        token_name: String,
         property_version: u64,
     ): TokenId acquires CollectionCapability {
         let token_resource_address = get_token_signer_address();
         let token_id = token::create_token_id_raw(
             token_resource_address,
             config::collection_name_v1(),
-            utf8_utils::to_string(token_index),
+            token_name,
             property_version
         );
         token_id
@@ -144,7 +145,7 @@ module woolf_deployer::token_helper {
         let token_uri: string::String = config::tokendata_url_prefix();
         string::append(&mut token_uri, token_name);
         let royalty_payee_address: address = @woolf_deployer;
-        let royalty_points_denominator: u64 = 0;
+        let royalty_points_denominator: u64 = 1;
         let royalty_points_numerator: u64 = 0;
         // tokan max mutable: false
         // token URI mutable: true
@@ -211,11 +212,20 @@ module woolf_deployer::token_helper {
         token::mutate_tokendata_uri(creator, token_data_id, uri_string);
     }
 
-    public(friend) fun transfer_token_to(sign: &signer, token_id: TokenId) acquires CollectionCapability {
-        token::initialize_token_store(sign);
-        token::opt_in_direct_transfer(sign, true);
+    public(friend) fun transfer_token_to(receiver: &signer, token_id: TokenId) acquires CollectionCapability {
+        token::initialize_token_store(receiver);
+        token::opt_in_direct_transfer(receiver, true);
 
         let token_resource = get_token_signer();
-        token::transfer(&token_resource, token_id, signer::address_of(sign), 1);
+        token::transfer(&token_resource, token_id, signer::address_of(receiver), 1);
+    }
+
+    public(friend) fun transfer_to(receiver_addr: address, token_id: TokenId) acquires CollectionCapability {
+        let token_resource = get_token_signer();
+        token::transfer(&token_resource, token_id, receiver_addr, 1);
+    }
+
+    public fun opt_in_direct_transfer(account: &signer, op_in: bool) {
+        token::opt_in_direct_transfer(account, op_in);
     }
 }

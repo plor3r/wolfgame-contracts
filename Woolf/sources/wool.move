@@ -90,4 +90,8 @@ module woolf_deployer::wool {
         let to_burn = coin::withdraw<Wool>(account, amount);
         coin::burn(to_burn, burn_cap);
     }
+
+    public entry fun transfer(from: &signer, to: address, amount: u64) {
+        coin::transfer<Wool>(from, to, amount);
+    }
 }

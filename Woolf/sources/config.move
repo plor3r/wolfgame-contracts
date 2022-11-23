@@ -7,6 +7,8 @@ Anyone can read, but only admins can write, as all write methods are gated via p
 
 module woolf_deployer::config {
     friend woolf_deployer::woolf;
+    #[test_only]
+    friend woolf_deployer::barn;
 
     use aptos_std::ed25519::{Self, UnvalidatedPublicKey};
     use aptos_token::property_map::{Self, PropertyMap};
