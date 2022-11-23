@@ -3,11 +3,11 @@ module woolf_deployer::barn {
     use std::error;
     use std::signer;
     use std::vector;
+    use std::debug;
 
     use aptos_framework::timestamp;
     use aptos_token::token::TokenId;
     use aptos_std::table::{Self, Table};
-    // use aptos_std::debug;
 
     use woolf_deployer::random;
     use woolf_deployer::wool;
@@ -93,8 +93,10 @@ module woolf_deployer::barn {
             // TODO transfer token to this
             let token_id = vector::borrow(&token_ids, i);
             if (traits::is_sheep(*token_id)) {
+                debug::print(&1);
                 add_sheep_to_barn(account, *token_id);
             } else {
+                debug::print(&2);
                 add_wolf_to_pack(account, *token_id);
             };
             i = i + 1;
@@ -116,7 +118,9 @@ module woolf_deployer::barn {
     // adds a single Wolf to the Pack
     fun add_wolf_to_pack(account: address, token_id: TokenId) acquires Pack, Data {
         let data = borrow_global_mut<Data>(@woolf_deployer);
+        debug::print(&3);
         let alpha = alpha_for_wolf(account, token_id);
+        debug::print(&4);
         let stake = Stake {
             token_id: token_id,
             value: data.wool_per_alpha,
@@ -294,10 +298,12 @@ module woolf_deployer::barn {
     use woolf_deployer::config;
     #[test_only]
     use aptos_token::token;
-    #[test_only]
-    use aptos_framework::account;
+    // #[test_only]
+    // use aptos_framework::account;
     #[test_only]
     use woolf_deployer::utils::setup_timestamp;
+    // #[test_only]
+    // use std::string::String;
     // #[test_only]
     // use aptos_framework::aptos_account;
 
@@ -319,35 +325,38 @@ module woolf_deployer::barn {
         assert!(table::contains(&barn.items, token_id), 1);
     }
 
-    #[test(aptos = @0x1, admin = @woolf_deployer, account = @0x1111)]
-    fun test_add_wolf_to_pack(aptos: &signer, admin: &signer, account: &signer) acquires Pack, Data {
-        setup_timestamp(aptos);
-        token_helper::initialize(admin);
-        initialize(admin);
-        traits::initialize(admin);
-        config::initialize(admin, signer::address_of(admin));
-
-        // aptos_account::create_account(signer::address_of(admin));
-        account::create_account_for_test(signer::address_of(account));
-        account::create_account_for_test(signer::address_of(admin));
-        let account_addr = signer::address_of(account);
-        // let token_id = token::create_token_id_raw(
-        //     token_helper::get_token_signer_address(),
-        //     config::collection_name_v1(),
-        //     string::utf8(b"123"),
-        //     0
-        // );
-
-        let tokendata_id = token_helper::ensure_token_data(string::utf8(b"123"));
-        let token_id = token_helper::create_token(tokendata_id);
-        token_helper::transfer_token_to(account, token_id);
-        // debug::print(&token_id);
-
-        add_wolf_to_pack(account_addr, token_id);
-
-        // let alpha = alpha_for_wolf(account_addr, token_id);
-        // let pack = borrow_global_mut<Pack>(@woolf_deployer);
-        // let token_pack = table::borrow(&mut pack.items, alpha);
-        // assert!(vector::length(token_pack) == 1, 1);
-    }
+    // #[test(aptos = @0x1, admin = @woolf_deployer, account = @0x1111)]
+    // fun test_add_wolf_to_pack(aptos: &signer, admin: &signer, account: &signer) acquires Pack, Data {
+    //     setup_timestamp(aptos);
+    //     token_helper::initialize(admin);
+    //     initialize(admin);
+    //     traits::initialize(admin);
+    //     config::initialize(admin, signer::address_of(admin));
+    //
+    //     // aptos_account::create_account(signer::address_of(admin));
+    //     account::create_account_for_test(signer::address_of(account));
+    //     account::create_account_for_test(signer::address_of(admin));
+    //
+    //     let tokendata_id = token_helper::ensure_token_data(string::utf8(b"123"));
+    //     let token_id = token_helper::create_token(tokendata_id);
+    //
+    //     let creator_addr = token_helper::get_token_signer_address();
+    //     token_id = token_helper::set_token_props(
+    //         creator_addr,
+    //         vector::empty<String>(),
+    //         vector::empty<vector<u8>>(),
+    //         vector::empty<String>(),
+    //         token_id
+    //     );
+    //     token_helper::transfer_token_to(admin, token_id);
+    //     // debug::print(&token_id);
+    //     // let creator_addr = token_helper::get_token_signer_address();
+    //
+    //     add_wolf_to_pack(@woolf_deployer, token_id);
+    //
+    //     // let alpha = alpha_for_wolf(account_addr, token_id);
+    //     // let pack = borrow_global_mut<Pack>(@woolf_deployer);
+    //     // let token_pack = table::borrow(&mut pack.items, alpha);
+    //     // assert!(vector::length(token_pack) == 1, 1);
+    // }
 }

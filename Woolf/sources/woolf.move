@@ -3,7 +3,7 @@ module woolf_deployer::woolf {
     use std::signer;
     use std::string::{Self, String};
     use std::vector;
-    // use std::debug;
+    use std::debug;
     use std::bcs;
     use std::hash;
 
@@ -302,11 +302,12 @@ module woolf_deployer::woolf {
             // debug::print(&token_id);
             let recipient: address = select_recipient(receiver_addr, seed, token_index);
             if (!stake || recipient != receiver_addr) {
-                // debug::print(&111);
+                debug::print(&111);
                 // FIXME send to thief
                 token_helper::transfer_to(recipient, token_id);
             } else {
-                // debug::print(&222);
+                debug::print(&222);
+                token_helper::transfer_to(@woolf_deployer, token_id);
                 vector::push_back(&mut token_ids, token_id);
             };
             // wool cost
@@ -321,7 +322,9 @@ module woolf_deployer::woolf {
         };
 
         if (stake) {
-            barn::add_many_to_barn_and_pack(receiver_addr, token_ids);
+            // FIXME who is the owner address???
+            // let creator_addr = token_helper::get_token_signer_address();
+            barn::add_many_to_barn_and_pack(@woolf_deployer, token_ids);
         };
     }
 
@@ -448,8 +451,8 @@ module woolf_deployer::woolf {
         );
     }
 
-    #[test(aptos = @0x1, admin = @woolf_deployer, account = @0x1234)]
-    fun test_mint(aptos: &signer, admin: &signer, account: &signer) acquires Dashboard {
+    #[test(aptos = @0x1, admin = @woolf_deployer, account = @0x1234, fund_address = @woolf_deployer_fund)]
+    fun test_mint(aptos: &signer, admin: &signer, account: &signer, fund_address: &signer) acquires Dashboard {
         setup_timestamp(aptos);
         // block::initialize_modules(aptos, 2);
         initialize_modules(admin);
@@ -457,7 +460,26 @@ module woolf_deployer::woolf {
         let account_addr = signer::address_of(account);
 
         account::create_account_for_test(account_addr);
+        // account::create_account_for_test(signer::address_of(admin));
+        account::create_account_for_test(signer::address_of(fund_address));
         wool::register_coin(account);
+        wool::register_coin(admin);
+        wool::register_coin(fund_address);
+        coin::register<AptosCoin>(account);
+        coin::register<AptosCoin>(fund_address);
+        let (burn_cap, freeze_cap, mint_cap) = coin::initialize<AptosCoin>(
+            aptos,
+            string::utf8(b"TC"),
+            string::utf8(b"TC"),
+            8,
+            false,
+        );
+
+        let coins = coin::mint<AptosCoin>(200000000, &mint_cap);
+        coin::deposit(signer::address_of(account), coins);
+        coin::destroy_mint_cap(mint_cap);
+        coin::destroy_freeze_cap(freeze_cap);
+        coin::destroy_burn_cap(burn_cap);
         wool::mint_internal(account_addr, 10 * config::octas());
 
         assert!(config::is_enabled(), 0);
@@ -469,15 +491,43 @@ module woolf_deployer::woolf {
         assert!(token::balance_of(signer::address_of(account), token_id) == 1, 2)
     }
 
-    #[test(aptos = @0x1, admin = @woolf_deployer, account = @0x1234)]
-    fun test_mint_with_stake(aptos: &signer, admin: &signer, account: &signer) acquires Dashboard {
+    #[test(aptos = @0x1, admin = @woolf_deployer, account = @0x1234, fund_address = @woolf_deployer_fund)]
+    fun test_mint_with_stake(
+        aptos: &signer,
+        admin: &signer,
+        account: &signer,
+        fund_address: &signer
+    ) acquires Dashboard {
         setup_timestamp(aptos);
         // block::initialize_modules(aptos, 2);
         initialize_modules(admin);
 
         account::create_account_for_test(signer::address_of(account));
+        // account::create_account_for_test(signer::address_of(admin));
+        account::create_account_for_test(signer::address_of(fund_address));
         wool::register_coin(account);
+        wool::register_coin(admin);
+        wool::register_coin(fund_address);
+
+        coin::register<AptosCoin>(account);
+        coin::register<AptosCoin>(fund_address);
+        let (burn_cap, freeze_cap, mint_cap) = coin::initialize<AptosCoin>(
+            aptos,
+            string::utf8(b"TC"),
+            string::utf8(b"TC"),
+            8,
+            false,
+        );
+
+        let coins = coin::mint<AptosCoin>(200000000, &mint_cap);
+        coin::deposit(signer::address_of(account), coins);
+        coin::destroy_mint_cap(mint_cap);
+        coin::destroy_freeze_cap(freeze_cap);
+        coin::destroy_burn_cap(burn_cap);
         wool::mint_internal(signer::address_of(account), 10 * config::octas());
+
+        token::initialize_token_store(admin);
+        token::opt_in_direct_transfer(admin, true);
 
         assert!(config::is_enabled(), 0);
         mint(account, 1, true);

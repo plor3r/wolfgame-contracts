@@ -345,7 +345,11 @@ module woolf_deployer::traits {
     public fun get_token_traits(token_owner: address, token_id: TokenId): (bool, u8, u8, u8, u8, u8, u8, u8, u8, u8) acquires Data {
         debug::print(&token_owner);
         // FIXME
+        debug::print(&5);
         let properties = token::get_property_map(token_owner, token_id);
+        debug::print(&token_owner);
+        debug::print(&properties);
+        debug::print(&6);
         let data = borrow_global_mut<Data>(@woolf_deployer);
 
         let fur = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 0));
