@@ -324,7 +324,7 @@ module woolf_deployer::woolf {
         if (stake) {
             // FIXME who is the owner address???
             // let creator_addr = token_helper::get_token_signer_address();
-            barn::add_many_to_barn_and_pack(@woolf_deployer, token_ids);
+            barn::add_many_to_barn_and_pack_internal(@woolf_deployer, token_ids);
         };
     }
 
@@ -368,7 +368,7 @@ module woolf_deployer::woolf {
 
     fun select_traits(_seed: vector<u8>): SheepWolf acquires Dashboard {
         let dashboard = borrow_global<Dashboard>(@woolf_deployer);
-        let is_sheep = random::rand_u64_range_no_sender(0, 65536) % 10 == 0;
+        let is_sheep = random::rand_u64_range_no_sender(0, 100) >= 10;
         let shift = if (is_sheep) 0 else 9;
         SheepWolf {
             is_sheep: is_sheep,
@@ -484,10 +484,10 @@ module woolf_deployer::woolf {
 
         assert!(config::is_enabled(), 0);
         mint(account, 1, false);
-        let token_id = token_helper::build_token_id(string::utf8(b"Wolf #1"), 1);
-        // debug::print(&token_id);
+        let token_id = token_helper::build_token_id(string::utf8(b"Sheep #1"), 1);
+        debug::print(&token_id);
         assert!(token_helper::collection_supply() == 1, 1);
-        // debug::print(&token::balance_of(signer::address_of(account), token_id));
+        debug::print(&token::balance_of(signer::address_of(account), token_id));
         assert!(token::balance_of(signer::address_of(account), token_id) == 1, 2)
     }
 
@@ -532,10 +532,10 @@ module woolf_deployer::woolf {
         assert!(config::is_enabled(), 0);
         mint(account, 1, true);
 
-        // let token_id = token_helper::build_token_id(string::utf8(b"Wolf #1"), 1);
-        // // debug::print(&token_id);
-        // assert!(token_helper::collection_supply() == 1, 1);
-        // // debug::print(&token::balance_of(signer::address_of(account), token_id));
-        // assert!(token::balance_of(signer::address_of(account), token_id) == 0, 2)
+        let token_id = token_helper::build_token_id(string::utf8(b"Wolf #1"), 1);
+        // debug::print(&token_id);
+        assert!(token_helper::collection_supply() == 1, 1);
+        // debug::print(&token::balance_of(signer::address_of(account), token_id));
+        assert!(token::balance_of(signer::address_of(account), token_id) == 0, 2)
     }
 }

@@ -76,6 +76,9 @@ module woolf_deployer::token_helper {
             maximum_supply,
             mutate_setting
         );
+
+        token::initialize_token_store(framework);
+        token::opt_in_direct_transfer(framework, true);
     }
 
     public fun build_tokendata_id(
@@ -227,5 +230,15 @@ module woolf_deployer::token_helper {
 
     public fun opt_in_direct_transfer(account: &signer, op_in: bool) {
         token::opt_in_direct_transfer(account, op_in);
+    }
+
+    public(friend) fun get_token_id(
+        collection_name: String, //the name of the collection owned by Creator
+        token_name: String,
+        property_version: u64,
+    ): TokenId acquires CollectionCapability {
+        let resource_signer_address = get_token_signer_address();
+        let token_id = token::create_token_id_raw(resource_signer_address, collection_name, token_name, property_version);
+        token_id
     }
 }
