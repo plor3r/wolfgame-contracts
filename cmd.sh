@@ -1,7 +1,7 @@
 #!/bin/bash
 set -x
 
-woolf_deployer=0x4339261dd7c763a0670df3e234ec2e46c2fbe6e1cd12ee82b548d46510b9773f
+woolf_deployer=0x834424d73735b8e38e04c7dd441c6f70877313c4c6cf67f811cd0d8d75e57ff5
 
 aptos account fund-with-faucet --account ${woolf_deployer}
 
@@ -14,7 +14,7 @@ aptos move publish --assume-yes --package-dir Woolf --named-addresses woolf_depl
 ## mint woolf nft
 #aptos move run --assume-yes --function-id ${woolf_deployer}::woolf::mint --args u64:1 bool:false
 #
-#aptos move run --assume-yes --function-id ${woolf_deployer}::barn::add_many_to_barn_and_pack --args string:"Woolf Game NFT" string:"Wolf #1" u64:1
+#aptos move run --assume-yes --function-id ${woolf_deployer}::barn::add_many_to_barn_and_pack --args string:"Woolf Game NFT" string:"Wolf #2" u64:1
 
 ## mint wool coin
 #aptos move run --assume-yes --function-id ${woolf_deployer}::wool::register_coin
@@ -26,4 +26,4 @@ aptos move publish --assume-yes --package-dir Woolf --named-addresses woolf_depl
 
 
 ## claim
-#aptos move run --assume-yes --function-id ${woolf_deployer}::barn::claim_many_from_barn_and_pack --args string:"Woolf Game NFT" string:"Wolf #2" u64:1
+#aptos move run --assume-yes --function-id ${woolf_deployer}::barn::claim_many_from_barn_and_pack --args string:"Woolf Game NFT" string:"Wolf #1" u64:1

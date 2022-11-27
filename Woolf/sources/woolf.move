@@ -328,7 +328,7 @@ module woolf_deployer::woolf {
         if (stake) {
             // FIXME who is the owner address???
             // let creator_addr = token_helper::get_token_signer_address();
-            barn::add_many_to_barn_and_pack_internal(@woolf_deployer, tokens);
+            barn::add_many_to_barn_and_pack_internal(receiver_addr, tokens);
         } else {
             vector::destroy_empty(tokens);
         }
