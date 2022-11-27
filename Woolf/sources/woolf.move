@@ -14,7 +14,7 @@ module woolf_deployer::woolf {
     use aptos_framework::event::EventHandle;
     // use aptos_framework::timestamp;
     use aptos_std::table::{Self, Table};
-    use aptos_token::token::{Self, TokenDataId, TokenId};
+    use aptos_token::token::{Self, TokenDataId, TokenId, Token};
 
     use woolf_deployer::barn;
     use woolf_deployer::wool;
@@ -223,11 +223,11 @@ module woolf_deployer::woolf {
         8000 * config::octas()
     }
 
-    fun issue_token(_receiver: &signer, token_index: u64, t: SheepWolf): TokenId {
+    fun issue_token(_receiver: &signer, token_index: u64, t: SheepWolf): Token {
         let SheepWolf {
             is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index
         } = t;
-        let token_name = string::utf8(if (is_sheep) b"Sheep #" else b"Wolf #");
+        let token_name = if (is_sheep) config::token_name_sheep_prefix() else config::token_name_wolf_prefix();
         string::append(&mut token_name, utf8_utils::to_string(token_index));
         // Create the token, and transfer it to the user
         let tokendata_id = token_helper::ensure_token_data(token_name);
@@ -239,16 +239,18 @@ module woolf_deployer::woolf {
         let creator_addr = token_helper::get_token_signer_address();
         token_id = token_helper::set_token_props(
             creator_addr,
+            token_id,
             property_keys,
             property_values,
-            property_types,
-            token_id
+            property_types
         );
+
+        traits::update_token_traits(token_id, is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index);
 
         // FIXME set token_uri
         // let _token_uri_string = traits::token_uri(signer::address_of(_receiver), token_id);
         // let _token_uri_string = traits::token_uri_internal(is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index);
-        let token_uri_string = string::utf8(b"ipfs://QmaXzZhcYnsisuue5WRdQDH6FDvqkLQX1NckLqBYeYYEfm/");
+        let token_uri_string = config::tokendata_url_prefix();
         string::append(&mut token_uri_string, utf8_utils::to_string(token_index));
         string::append(&mut token_uri_string, string::utf8(b".json"));
         let creator = token_helper::get_token_signer();
@@ -266,8 +268,7 @@ module woolf_deployer::woolf {
         //         token_data_id: collection_token_minter.token_data_id,
         //     }
         // );
-
-        token_id
+        token::withdraw_token(&creator, token_id, 1)
     }
 
     /// Mint an NFT to the receiver.
@@ -291,24 +292,27 @@ module woolf_deployer::woolf {
         };
 
         let total_wool_cost: u64 = 0;
-        let token_ids: vector<TokenId> = vector::empty<TokenId>();
+        let tokens: vector<Token> = vector::empty<Token>();
         let seed: vector<u8>;
         let i = 0;
         while (i < amount) {
             seed = random::seed(&receiver_addr);
             let token_index = token_helper::collection_supply() + 1; // from 1
             let sheep_wolf_traits = generate_traits(seed);
-            let token_id = issue_token(receiver, token_index, sheep_wolf_traits);
+            let token = issue_token(receiver, token_index, sheep_wolf_traits);
+            // let token_id = token::get_token_id(&token);
             // debug::print(&token_id);
             let recipient: address = select_recipient(receiver_addr, seed, token_index);
             if (!stake || recipient != receiver_addr) {
                 debug::print(&111);
                 // FIXME send to thief
-                token_helper::transfer_to(recipient, token_id);
+                // token_helper::transfer_to(recipient, token_id);
+
+                token::direct_deposit_with_opt_in(recipient, token);
             } else {
                 debug::print(&222);
-                token_helper::transfer_to(@woolf_deployer, token_id);
-                vector::push_back(&mut token_ids, token_id);
+                // token_helper::transfer_to(@woolf_deployer, token_id);
+                vector::push_back(&mut tokens, token);
             };
             // wool cost
             total_wool_cost = total_wool_cost + mint_cost(token_index);
@@ -324,8 +328,10 @@ module woolf_deployer::woolf {
         if (stake) {
             // FIXME who is the owner address???
             // let creator_addr = token_helper::get_token_signer_address();
-            barn::add_many_to_barn_and_pack_internal(@woolf_deployer, token_ids);
-        };
+            barn::add_many_to_barn_and_pack_internal(@woolf_deployer, tokens);
+        } else {
+            vector::destroy_empty(tokens);
+        }
     }
 
     // the first 20% (ETH purchases) go to the minter

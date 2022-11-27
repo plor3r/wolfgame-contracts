@@ -3,12 +3,13 @@ module woolf_deployer::barn {
     use std::error;
     use std::signer;
     use std::vector;
-    use std::debug;
+    // use std::debug;
     use std::string::String;
 
     use aptos_framework::timestamp;
-    use aptos_token::token::{Self, TokenId};
+    use aptos_token::token::{Self, TokenId, Token};
     use aptos_std::table::{Self, Table};
+    use aptos_std::debug;
 
     use woolf_deployer::random;
     use woolf_deployer::wool;
@@ -40,17 +41,17 @@ module woolf_deployer::barn {
     const ENOT_IN_PACK: u64 = 3;
 
     // struct to store a stake's token, owner, and earning values
-    struct Stake has key, store, drop {
-        token_id: TokenId,
+    struct Stake has key, store {
+        token: Token,
         value: u64,
         owner: address,
     }
 
-    struct Barn has key, store {
+    struct Barn has key {
         items: Table<TokenId, Stake>,
     }
 
-    struct Pack has key, store {
+    struct Pack has key {
         items: Table<u8, vector<Stake>>,
         pack_indices: Table<TokenId, u64>,
     }
@@ -71,8 +72,8 @@ module woolf_deployer::barn {
     }
 
     public(friend) fun initialize(framework: &signer) {
-        move_to(framework, Barn { items: table::new() });
-        move_to(framework, Pack { items: table::new<u8, vector<Stake>>(), pack_indices: table::new() });
+        move_to(framework, Barn { items: table::new<TokenId, Stake>() });
+        move_to(framework, Pack { items: table::new<u8, vector<Stake>>(), pack_indices: table::new<TokenId, u64>() });
         move_to(framework, Data {
             total_wool_earned: 0,
             total_sheep_staked: 0,
@@ -89,57 +90,64 @@ module woolf_deployer::barn {
         token_name: String,
         property_version: u64,
     ) acquires Barn, Pack, Data {
-        let token_id = token_helper::get_token_id(collection_name, token_name, property_version);
-        debug::print(staker);
-        debug::print(&token_id);
-        token::transfer(staker, token_id, @woolf_deployer, 1);
+        let token_id = token_helper::create_token_id(collection_name, token_name, property_version);
         debug::print(&234);
+        // let (is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index) = traits::get_token_traits(
+        //     signer::address_of(staker),
+        //     token_id
+        // );
+        // traits::update_token_traits(token_id, is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index, );
 
-        assert!(token::balance_of(@woolf_deployer, token_id) == 1, 1);
-        let token_ids = vector<TokenId>[token_id];
-        add_many_to_barn_and_pack_internal(@woolf_deployer, token_ids);
+        let token = token::withdraw_token(staker, token_id, 1);
+        // debug::print(&token.token_properties);
+        let tokens = vector<Token>[token];
+        add_many_to_barn_and_pack_internal(@woolf_deployer, tokens);
     }
 
     // adds Sheep and Wolves to the Barn and Pack
     public(friend) fun add_many_to_barn_and_pack_internal(
         account: address,
-        token_ids: vector<TokenId>
+        tokens: vector<Token>
     ) acquires Barn, Pack, Data {
         // assert!(account == @woolf_deployer, EINVALID_CALLER);
-        let i = 0;
-        while (i < vector::length<TokenId>(&token_ids)) {
-            let token_id = vector::borrow(&token_ids, i);
-            if (traits::is_sheep(*token_id)) {
+        let i = vector::length<Token>(&tokens);
+        while (i > 0) {
+            let token = vector::pop_back(&mut tokens);
+            let token_id = token::get_token_id(&token);
+            if (traits::is_sheep(token_id)) {
                 debug::print(&7);
-                add_sheep_to_barn(account, *token_id);
+                add_sheep_to_barn(account, token);
             } else {
                 debug::print(&8);
-                add_wolf_to_pack(account, *token_id);
+                add_wolf_to_pack(account, token);
             };
-            i = i + 1;
+            i = i - 1;
         };
+        vector::destroy_empty(tokens)
     }
 
     // adds a single Sheep to the Barn
-    fun add_sheep_to_barn(account: address, token_id: TokenId) acquires Barn, Data {
+    fun add_sheep_to_barn(account: address, token: Token) acquires Barn, Data {
         update_earnings();
+        let token_id = token::get_token_id(&token);
         let stake = Stake {
-            token_id: token_id,
+            token,
             value: timestamp::now_seconds(),
             owner: account,
         };
         let barn = borrow_global_mut<Barn>(@woolf_deployer);
-        table::upsert(&mut barn.items, token_id, stake);
+        table::add(&mut barn.items, token_id, stake);
     }
 
     // adds a single Wolf to the Pack
-    fun add_wolf_to_pack(account: address, token_id: TokenId) acquires Pack, Data {
+    fun add_wolf_to_pack(account: address, token: Token) acquires Pack, Data {
         let data = borrow_global_mut<Data>(@woolf_deployer);
+        let token_id = token::get_token_id(&token);
         debug::print(&account);
         let alpha = alpha_for_wolf(account, token_id);
-        
+
         let stake = Stake {
-            token_id: token_id,
+            token,
             value: data.wool_per_alpha,
             owner: account,
         };
@@ -174,9 +182,7 @@ module woolf_deployer::barn {
         token_name: String,
         property_version: u64,
     ) acquires Barn, Pack, Data {
-        let token_id = token_helper::get_token_id(collection_name, token_name, property_version);
-        // withdraw
-        token::transfer(staker, token_id, @woolf_deployer, 1);
+        let token_id = token_helper::create_token_id(collection_name, token_name, property_version);
         let token_ids = vector<TokenId>[token_id];
         claim_many_from_barn_and_pack_internal(staker, token_ids, true);
     }
@@ -231,8 +237,8 @@ module woolf_deployer::barn {
                 owed = 0;
             };
             // send back Sheep
-            let Stake { token_id: token_id, value: _, owner: _ } = table::remove(&mut barn.items, token_id);
-            token_helper::transfer_token_to(owner, token_id);
+            let Stake { token, value: _, owner: _ } = table::remove(&mut barn.items, token_id);
+            token::deposit_token(owner, token);
             data.total_sheep_staked = data.total_sheep_staked - 1;
         };
         // TODO emit SheepClaimed(tokenId, owed, unstake);
@@ -249,6 +255,7 @@ module woolf_deployer::barn {
         let index = 0;  // TODO find the index
         let stake = vector::borrow_mut(stake_vector, index);
         let data = borrow_global_mut<Data>(@woolf_deployer);
+
         assert!(signer::address_of(owner) == stake.owner, error::permission_denied(EINVALID_OWNER));
         let owed = (alpha as u64) * (data.wool_per_alpha - stake.value); // Calculate portion of tokens based on Alpha
         if (unstake) {
@@ -258,19 +265,13 @@ module woolf_deployer::barn {
             let token_index = table::borrow(&mut pack.pack_indices, token_id);
             table::upsert(&mut pack.pack_indices, token_id, *token_index);
 
-            let Stake { token_id: token_id, value: _, owner: _ } = vector::swap_remove(stake_vector, index);
+            let Stake { token, value: _, owner: _ } = vector::swap_remove(stake_vector, index);
             // Send back Wolf
-            token_helper::transfer_token_to(owner, token_id);
+            token::deposit_token(owner, token);
         } else {
-            // reset stake
-            // stake = &mut Stake {
-            //     owner: signer::address_of(owner),
-            //     token_id: token_id,
-            //     value: data.wool_per_alpha
-            // };
             stake.value = data.wool_per_alpha;
-            stake.owner = signer::address_of(owner);
-            stake.token_id = token_id;
+            // stake.owner = signer::address_of(owner);
+            // stake.token = token;
         };
         // TODO emit WolfClaimed(tokenId, owed, unstake);
         owed
@@ -336,34 +337,34 @@ module woolf_deployer::barn {
     // #[test_only]
     // use aptos_framework::aptos_account;
 
-    #[test(aptos = @0x1, account = @woolf_deployer)]
-    fun test_add_sheep_to_barn(aptos: &signer, account: &signer) acquires Barn, Data {
-        setup_timestamp(aptos);
-        initialize(account);
-
-        let account_addr = signer::address_of(account);
-        let token_id = token::create_token_id_raw(
-            account_addr,
-            config::collection_name_v1(),
-            string::utf8(b"123"),
-            0
-        );
-        add_sheep_to_barn(account_addr, token_id);
-
-        let barn = borrow_global<Barn>(@woolf_deployer);
-        assert!(table::contains(&barn.items, token_id), 1);
-    }
+    // #[test(aptos = @0x1, account = @woolf_deployer)]
+    // fun test_add_sheep_to_barn(aptos: &signer, account: &signer) acquires Barn, Data {
+    //     setup_timestamp(aptos);
+    //     initialize(account);
+    //
+    //     let account_addr = signer::address_of(account);
+    //     let token_id = token::create_token_id_raw(
+    //         account_addr,
+    //         config::collection_name_v1(),
+    //         string::utf8(b"123"),
+    //         0
+    //     );
+    //     add_sheep_to_barn(account_addr, token_id);
+    //
+    //     let barn = borrow_global<Barn>(@woolf_deployer);
+    //     assert!(table::contains(&barn.items, token_id), 1);
+    // }
 
     #[test(aptos = @0x1, admin = @woolf_deployer, account = @0x1234)]
     fun test_add_many_to_barn_and_pack(aptos: &signer, admin: &signer, account: &signer) acquires Barn, Pack, Data {
+        account::create_account_for_test(signer::address_of(account));
+        account::create_account_for_test(signer::address_of(admin));
+
         setup_timestamp(aptos);
         token_helper::initialize(admin);
         initialize(admin);
         traits::initialize(admin);
         config::initialize(admin, signer::address_of(admin));
-
-        account::create_account_for_test(signer::address_of(account));
-        account::create_account_for_test(signer::address_of(admin));
 
         token::initialize_token_store(admin);
         token::opt_in_direct_transfer(admin, true);
@@ -374,34 +375,37 @@ module woolf_deployer::barn {
 
         let creator_addr = token_helper::get_token_signer_address();
         let (property_keys, property_values, property_types) = traits::get_name_property_map(
-            false, 1, 0, 0, 2, 1, 0, 1, 0, 1
+            true, 1, 0, 0, 2, 1, 0, 1, 0, 1
         );
         token_id = token_helper::set_token_props(
             creator_addr,
+            token_id,
             property_keys,
             property_values,
             property_types,
-            token_id
         );
+        traits::update_token_traits(token_id, true, 1, 0, 0, 2, 1, 0, 1, 0, 1);
         token_helper::transfer_token_to(account, token_id);
         assert!(token::balance_of(account_addr, token_id) == 1, 1);
+
+        debug::print(&token_id);
+
         add_many_to_barn_and_pack(account, config::collection_name_v1(), string::utf8(b"Wolf #123"), 1);
 
-        // let barn = borrow_global<Barn>(@woolf_deployer);
-        // assert!(table::contains(&barn.items, token_id), 1);
+        assert!(token::balance_of(account_addr, token_id) == 0, 2);
+        let barn = borrow_global<Barn>(@woolf_deployer);
+        assert!(table::contains(&barn.items, token_id) == true, 3);
     }
 
     #[test(aptos = @0x1, admin = @woolf_deployer, account = @0x1111)]
     fun test_add_wolf_to_pack(aptos: &signer, admin: &signer, account: &signer) acquires Pack, Data {
+        account::create_account_for_test(signer::address_of(account));
+        account::create_account_for_test(signer::address_of(admin));
         setup_timestamp(aptos);
         token_helper::initialize(admin);
         initialize(admin);
         traits::initialize(admin);
         config::initialize(admin, signer::address_of(admin));
-
-        // aptos_account::create_account(signer::address_of(admin));
-        account::create_account_for_test(signer::address_of(account));
-        account::create_account_for_test(signer::address_of(admin));
 
         let tokendata_id = token_helper::ensure_token_data(string::utf8(b"123"));
         let token_id = token_helper::create_token(tokendata_id);
@@ -412,23 +416,18 @@ module woolf_deployer::barn {
         );
         token_id = token_helper::set_token_props(
             creator_addr,
+            token_id,
             property_keys,
             property_values,
             property_types,
-            token_id
         );
-        token_id = token_helper::set_token_props(
-            creator_addr,
-            vector::empty<String>(),
-            vector::empty<vector<u8>>(),
-            vector::empty<String>(),
-            token_id
-        );
+        traits::update_token_traits(token_id, false, 1, 0, 0, 2, 1, 0, 1, 0, 1);
         token_helper::transfer_token_to(admin, token_id);
         // debug::print(&token_id);
-        // let creator_addr = token_helper::get_token_signer_address();
+        // let creator = token_helper::get_token_signer();
+        let token = token::withdraw_token(admin, token_id, 1);
 
-        add_wolf_to_pack(@woolf_deployer, token_id);
+        add_wolf_to_pack(@woolf_deployer, token);
 
         // let alpha = alpha_for_wolf(account_addr, token_id);
         // let pack = borrow_global_mut<Pack>(@woolf_deployer);

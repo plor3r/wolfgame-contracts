@@ -23,6 +23,9 @@ module woolf_deployer::config {
     const CONFIG_KEY_TOKENDATA_DESCRIPTION: vector<u8> = b"tokendata_description";
     const CONFIG_KEY_TOKENDATA_URL_PREFIX: vector<u8> = b"tokendata_url_prefix";
 
+    const CONFIG_KEY_TOKEN_NAME_WOLF_PREFIX: vector<u8> = b"token_name_wolf_prefix";
+    const CONFIG_KEY_TOKEN_NAME_SHEEP_PREFIX: vector<u8> = b"token_name_sheep_prefix";
+
     const COLLECTION_NAME_V1: vector<u8> = b"Woolf Game NFT";
 
     //
@@ -49,7 +52,9 @@ module woolf_deployer::config {
 
         // TODO: SET THIS TO SOMETHING REAL
         set_tokendata_description(framework, string::utf8(b"This is an Woolf Game NFT"));
-        set_tokendata_url_prefix(framework, string::utf8(b"https://www.aptosnames.com/api/mainnet/v1/metadata/"));
+        set_tokendata_url_prefix(framework, string::utf8(b"ipfs://QmaXzZhcYnsisuue5WRdQDH6FDvqkLQX1NckLqBYeYYEfm/"));
+        set_token_name_wolf_prefix(framework, string::utf8(b"Wolf #"));
+        set_token_name_sheep_prefix(framework, string::utf8(b"Sheep #"));
 
         // We set it directly here to allow boostrapping the other values
         set_v1(@woolf_deployer, config_key_fund_destination_address(), &@woolf_deployer_fund);
@@ -79,6 +84,14 @@ module woolf_deployer::config {
 
     public fun tokendata_url_prefix(): String acquires ConfigurationV1 {
         read_string_v1(@woolf_deployer, &config_key_tokendata_url_prefix())
+    }
+
+    public fun token_name_wolf_prefix(): String acquires ConfigurationV1 {
+        read_string_v1(@woolf_deployer, &config_key_token_name_wolf_prefix())
+    }
+
+    public fun token_name_sheep_prefix(): String acquires ConfigurationV1 {
+        read_string_v1(@woolf_deployer, &config_key_token_name_sheep_prefix())
     }
 
     /// Admins will be able to intervene when necessary.
@@ -115,6 +128,16 @@ module woolf_deployer::config {
         set_v1(@woolf_deployer, config_key_tokendata_url_prefix(), &description)
     }
 
+    public entry fun set_token_name_wolf_prefix(sign: &signer, description: String) acquires ConfigurationV1 {
+        assert_signer_is_admin(sign);
+        set_v1(@woolf_deployer, config_key_token_name_wolf_prefix(), &description)
+    }
+
+    public entry fun set_token_name_sheep_prefix(sign: &signer, description: String) acquires ConfigurationV1 {
+        assert_signer_is_admin(sign);
+        set_v1(@woolf_deployer, config_key_token_name_sheep_prefix(), &description)
+    }
+
     //
     // Configuration Methods
     //
@@ -142,6 +165,15 @@ module woolf_deployer::config {
     public fun config_key_tokendata_url_prefix(): String {
         string::utf8(CONFIG_KEY_TOKENDATA_URL_PREFIX)
     }
+
+    public fun config_key_token_name_wolf_prefix(): String {
+        string::utf8(CONFIG_KEY_TOKEN_NAME_WOLF_PREFIX)
+    }
+
+    public fun config_key_token_name_sheep_prefix(): String {
+        string::utf8(CONFIG_KEY_TOKEN_NAME_SHEEP_PREFIX)
+    }
+
 
 
     //

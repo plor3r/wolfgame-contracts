@@ -2,11 +2,11 @@ module woolf_deployer::traits {
     use std::error;
     use std::string::{Self, String};
     use std::vector;
-    use std::debug;
+    // use std::debug;
     use std::option::{Self, Option};
     use aptos_std::table::Table;
     use aptos_std::table;
-    use aptos_token::token::{Self, TokenId};
+    use aptos_token::token::TokenId;
     use aptos_token::property_map;
 
     use woolf_deployer::base64;
@@ -342,39 +342,47 @@ module woolf_deployer::traits {
         }
     }
 
-    public fun get_token_traits(token_owner: address, token_id: TokenId): (bool, u8, u8, u8, u8, u8, u8, u8, u8, u8) acquires Data {
-        
-        // FIXME
-        debug::print(&5);
-        let properties = token::get_property_map(token_owner, token_id);
-        debug::print(&token_owner);
-        debug::print(&properties);
-        debug::print(&6);
+    public fun get_token_traits(_token_owner: address, token_id: TokenId): (bool, u8, u8, u8, u8, u8, u8, u8, u8, u8) acquires Data {
+
         let data = borrow_global_mut<Data>(@woolf_deployer);
-        debug::print(&1001);
-        debug::print(vector::borrow(&data.trait_types, 0));
-        let fur = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 0));
-        debug::print(&1002);
-        let head = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 1));
-        debug::print(&1003);
-        let ears = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 2));
-        debug::print(&1004);
-        let eyes = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 3));
-        debug::print(&1005);
-        let nose = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 4));
-        debug::print(&1006);
-        let mouth = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 5));
-        debug::print(&1007);
-        let neck = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 6));
-        debug::print(&1008);
-        let feet = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 7));
-        debug::print(&1009);
-        let alpha_index = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 8));
-        debug::print(&1010);
-        let is_sheep = property_map::read_bool(&properties, vector::borrow(&data.trait_types, 9));
-        debug::print(&1011);
-        // debug::print(&SheepWolf { is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index });
+        let traits = table::borrow(&data.token_traits, token_id);
+
+        let SheepWolf { is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index } = *traits;
+
         (is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index)
+
+        // // FIXME
+        // debug::print(&5);
+        // debug::print(&token_owner);
+        // debug::print(&token_id);
+        // let properties = token::get_property_map(token_owner, token_id);
+        // debug::print(&properties);
+        // debug::print(&6);
+        // let data = borrow_global_mut<Data>(@woolf_deployer);
+        // debug::print(&1001);
+        // debug::print(vector::borrow(&data.trait_types, 0));
+        // let fur = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 0));
+        // debug::print(&1002);
+        // let head = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 1));
+        // debug::print(&1003);
+        // let ears = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 2));
+        // debug::print(&1004);
+        // let eyes = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 3));
+        // debug::print(&1005);
+        // let nose = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 4));
+        // debug::print(&1006);
+        // let mouth = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 5));
+        // debug::print(&1007);
+        // let neck = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 6));
+        // debug::print(&1008);
+        // let feet = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 7));
+        // debug::print(&1009);
+        // let alpha_index = property_map::read_u8(&properties, vector::borrow(&data.trait_types, 8));
+        // debug::print(&1010);
+        // let is_sheep = property_map::read_bool(&properties, vector::borrow(&data.trait_types, 9));
+        // debug::print(&1011);
+        // // debug::print(&SheepWolf { is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index });
+        // (is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index)
     }
 
     public fun is_sheep(token_id: TokenId): bool acquires Data {

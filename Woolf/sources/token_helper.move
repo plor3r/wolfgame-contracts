@@ -58,7 +58,6 @@ module woolf_deployer::token_helper {
         move_to(framework, CollectionCapability {
             capability: token_signer_cap,
         });
-
         // Set up NFT collection
         let description = string::utf8(b"woolf game NFT from overfive team");
         let collection_uri = string::utf8(b"https://woolfgame.com");
@@ -192,10 +191,10 @@ module woolf_deployer::token_helper {
 
     public(friend) fun set_token_props(
         token_owner: address,
+        token_id: TokenId,
         property_keys: vector<String>,
         property_values: vector<vector<u8>>,
-        property_types: vector<String>,
-        token_id: TokenId
+        property_types: vector<String>
     ): TokenId acquires CollectionCapability {
         let token_resource = get_token_signer();
 
@@ -232,7 +231,7 @@ module woolf_deployer::token_helper {
         token::opt_in_direct_transfer(account, op_in);
     }
 
-    public(friend) fun get_token_id(
+    public(friend) fun create_token_id(
         collection_name: String, //the name of the collection owned by Creator
         token_name: String,
         property_version: u64,
