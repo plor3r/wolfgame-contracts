@@ -386,11 +386,9 @@ module woolf_deployer::traits {
 
     public fun is_sheep(token_id: TokenId): bool acquires Data {
         let data = borrow_global<Data>(@woolf_deployer);
-        if (table::contains(&data.token_traits, token_id)) {
-            let sw = table::borrow(&data.token_traits, token_id);
-            return sw.is_sheep
-        };
-        false
+        assert!(table::contains(&data.token_traits, token_id), error::not_found(ETOKEN_NOT_FOUND));
+        let sw = table::borrow(&data.token_traits, token_id);
+        return sw.is_sheep
     }
 
     public fun get_name_property_map(
