@@ -20,13 +20,12 @@ module woolf_deployer::barn {
 
     // maximum alpha score for a Wolf
     const MAX_ALPHA: u8 = 8;
-
     // sheep earn 10000 $WOOL per day
     const DAILY_WOOL_RATE: u64 = 10000 * 100000000;
     // sheep must have 2 days worth of $WOOL to unstake or else it's too cold
-    // const MINIMUM_TO_EXIT: u64 = 2 * 86400;
+
+    // FIXME const MINIMUM_TO_EXIT: u64 = 2 * 86400;
     const MINIMUM_TO_EXIT: u64 = 60;
-    //
     const ONE_DAY_IN_SECOND: u64 = 86400;
     // wolves take a 20% tax on all $WOOL claimed
     const WOOL_CLAIM_TAX_PERCENTAGE: u64 = 20;
@@ -92,34 +91,24 @@ module woolf_deployer::barn {
         property_version: u64,
     ) acquires Barn, Pack, Data {
         let token_id = token_helper::create_token_id(collection_name, token_name, property_version);
-        // let (is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index) = traits::get_token_traits(
-        //     signer::address_of(staker),
-        //     token_id
-        // );
-        // traits::update_token_traits(token_id, is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index, );
-
         let token = token::withdraw_token(staker, token_id, 1);
-        // debug::print(&token.token_properties);
         let tokens = vector<Token>[token];
         add_many_to_barn_and_pack_internal(signer::address_of(staker), tokens);
     }
 
     // adds Sheep and Wolves to the Barn and Pack
     public(friend) fun add_many_to_barn_and_pack_internal(
-        account: address,
+        owner: address,
         tokens: vector<Token>
     ) acquires Barn, Pack, Data {
-        // assert!(account == @woolf_deployer, EINVALID_CALLER);
         let i = vector::length<Token>(&tokens);
         while (i > 0) {
             let token = vector::pop_back(&mut tokens);
             let token_id = token::get_token_id(&token);
             if (traits::is_sheep(token_id)) {
-                debug::print(&7);
-                add_sheep_to_barn(account, token);
+                add_sheep_to_barn(owner, token);
             } else {
-                debug::print(&8);
-                add_wolf_to_pack(account, token);
+                add_wolf_to_pack(owner, token);
             };
             i = i - 1;
         };
@@ -127,41 +116,46 @@ module woolf_deployer::barn {
     }
 
     // adds a single Sheep to the Barn
-    fun add_sheep_to_barn(account: address, token: Token) acquires Barn, Data {
+    fun add_sheep_to_barn(owner: address, token: Token) acquires Barn, Data {
         update_earnings();
         let token_id = token::get_token_id(&token);
         let stake = Stake {
             token,
             value: timestamp::now_seconds(),
-            owner: account,
+            owner: owner,
         };
         let data = borrow_global_mut<Data>(@woolf_deployer);
         data.total_sheep_staked = data.total_sheep_staked + 1;
+
         let barn = borrow_global_mut<Barn>(@woolf_deployer);
         table::add(&mut barn.items, token_id, stake);
     }
 
     // adds a single Wolf to the Pack
-    fun add_wolf_to_pack(account: address, token: Token) acquires Pack, Data {
+    fun add_wolf_to_pack(owner: address, token: Token) acquires Pack, Data {
         let data = borrow_global_mut<Data>(@woolf_deployer);
         let token_id = token::get_token_id(&token);
-        debug::print(&account);
-        let alpha = alpha_for_wolf(account, token_id);
+
+        // Portion of earnings ranges from 8 to 5
+        let alpha = alpha_for_wolf(owner, token_id);
+        data.total_alpha_staked = data.total_alpha_staked + (alpha as u64);
 
         let stake = Stake {
             token,
             value: data.wool_per_alpha,
-            owner: account,
+            owner: owner,
         };
+
+        // Add the wolf to the Pack
         let pack = borrow_global_mut<Pack>(@woolf_deployer);
-        data.total_alpha_staked = data.total_alpha_staked + (alpha as u64);
         if (!table::contains(&mut pack.items, alpha)) {
             table::add(&mut pack.items, alpha, vector::empty());
         };
 
         let token_pack = table::borrow_mut(&mut pack.items, alpha);
         vector::push_back(token_pack, stake);
-        // update index
+
+        // Store the location of the wolf in the Pack
         let token_index = vector::length(token_pack) - 1;
         table::upsert(&mut pack.pack_indices, token_id, token_index);
     }
@@ -296,12 +290,13 @@ module woolf_deployer::barn {
         MAX_ALPHA - alpha_index // alpha index is 0-3
     }
 
+    // tracks $WOOL earnings to ensure it stops once 2.4 billion is eclipsed
     fun update_earnings() acquires Data {
         let data = borrow_global_mut<Data>(@woolf_deployer);
         if (data.total_wool_earned < MAXIMUM_GLOBAL_WOOL) {
             data.total_wool_earned = data.total_wool_earned +
-                (timestamp::now_seconds(
-                ) - data.last_claim_timestamp) * data.total_sheep_staked * DAILY_WOOL_RATE / 86400;
+                (timestamp::now_seconds() - data.last_claim_timestamp)
+                    * data.total_sheep_staked * DAILY_WOOL_RATE / ONE_DAY_IN_SECOND;
             data.last_claim_timestamp = timestamp::now_seconds();
         }
     }

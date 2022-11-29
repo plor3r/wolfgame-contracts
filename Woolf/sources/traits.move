@@ -343,7 +343,6 @@ module woolf_deployer::traits {
     }
 
     public fun get_token_traits(_token_owner: address, token_id: TokenId): (bool, u8, u8, u8, u8, u8, u8, u8, u8, u8) acquires Data {
-
         let data = borrow_global_mut<Data>(@woolf_deployer);
         let traits = table::borrow(&data.token_traits, token_id);
 

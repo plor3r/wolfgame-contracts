@@ -41,18 +41,14 @@ module woolf_deployer::woolf {
 
     // 69.42 APT
     // const MINT_PRICE: u64 = 6942000000;
-    // const MAX_TOKENS: u64 = 50000;
-    // const PAID_TOKENS: u64 = 10000;
-    // const MAX_SINGLE_MINT: u64 = 10;
+    const MAX_TOKENS: u64 = 50000;
+    const PAID_TOKENS: u64 = 10000;
+    const MAX_SINGLE_MINT: u64 = 10;
 
     // testing config
     const MINT_PRICE: u64 = 100000000;
-    const MAX_TOKENS: u64 = 10;
-    const PAID_TOKENS: u64 = 2;
-    const MAX_SINGLE_MINT: u64 = 10;
-
-    // tokenTraits?
-    // existingCombinations?
+    // const MAX_TOKENS: u64 = 10;
+    // const PAID_TOKENS: u64 = 2;
 
     struct Chars has store {
         // list of probabilities for each trait type
