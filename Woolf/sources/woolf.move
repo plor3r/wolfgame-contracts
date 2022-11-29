@@ -414,7 +414,7 @@ module woolf_deployer::woolf {
     //     block::initialize_modules(aptos, 1);
     //     let token_id = token::create_token_id_raw(
     //         account_addr,
-    //         config::collection_name_v1(),
+    //         config::collection_name(),
     //         string::utf8(b"123"),
     //         0
     //     );

@@ -19,8 +19,6 @@ module woolf_deployer::token_helper {
     use woolf_deployer::utf8_utils;
     // use aptos_framework::reconfiguration::last_reconfiguration_time;
 
-    const COLLECTION_NAME_V1: vector<u8> = b"Woolf Game NFT";
-
     /// The collection does not exist. This should never happen.
     const ECOLLECTION_NOT_EXISTS: u64 = 1;
 
@@ -42,10 +40,6 @@ module woolf_deployer::token_helper {
         creator
     }
 
-    public fun collection_name_v1(): String {
-        return string::utf8(COLLECTION_NAME_V1)
-    }
-
     public(friend) fun initialize(framework: &signer) {
         // Create the resource account for token creation, so we can get it as a signer later
         let registry_seed = utf8_utils::to_string(timestamp::now_microseconds());
@@ -59,9 +53,6 @@ module woolf_deployer::token_helper {
             capability: token_signer_cap,
         });
         // Set up NFT collection
-        let description = string::utf8(b"woolf game NFT from overfive team");
-        let collection_uri = string::utf8(b"https://woolfgame.com");
-        // This turns off supply tracking, which allows for parallel execution
         let maximum_supply = 50000;
         // collection description mutable: true
         // collection URI mutable: true
@@ -69,9 +60,9 @@ module woolf_deployer::token_helper {
         let mutate_setting = vector<bool>[ true, true, false ];
         token::create_collection(
             &token_resource,
-            collection_name_v1(),
-            description,
-            collection_uri,
+            config::collection_name(),
+            config::collection_description(),
+            config::collection_uri(),
             maximum_supply,
             mutate_setting
         );
@@ -84,7 +75,7 @@ module woolf_deployer::token_helper {
         token_resource_address: address,
         token_name: String
     ): TokenDataId {
-        let collection_name = config::collection_name_v1();
+        let collection_name = config::collection_name();
         token::create_token_data_id(token_resource_address, collection_name, token_name)
     }
 
@@ -95,7 +86,7 @@ module woolf_deployer::token_helper {
         let token_resource_address = get_token_signer_address();
         let token_id = token::create_token_id_raw(
             token_resource_address,
-            config::collection_name_v1(),
+            config::collection_name(),
             token_name,
             property_version
         );
@@ -109,7 +100,7 @@ module woolf_deployer::token_helper {
 
     public(friend) fun collection_supply(): u64 acquires CollectionCapability {
         let token_resource_address = get_token_signer_address();
-        let supply = token::get_collection_supply(token_resource_address, collection_name_v1());
+        let supply = token::get_collection_supply(token_resource_address, config::collection_name());
         if (option::is_some<u64>(&supply)) {
             return option::extract(&mut supply)
         } else {
@@ -136,7 +127,7 @@ module woolf_deployer::token_helper {
         token_name: String
     ): TokenDataId {
         // Set up the NFT
-        let collection_name = config::collection_name_v1();
+        let collection_name = config::collection_name();
         assert!(
             token::check_collection_exists(signer::address_of(token_resource), collection_name),
             ECOLLECTION_NOT_EXISTS
@@ -237,7 +228,12 @@ module woolf_deployer::token_helper {
         property_version: u64,
     ): TokenId acquires CollectionCapability {
         let resource_signer_address = get_token_signer_address();
-        let token_id = token::create_token_id_raw(resource_signer_address, collection_name, token_name, property_version);
+        let token_id = token::create_token_id_raw(
+            resource_signer_address,
+            collection_name,
+            token_name,
+            property_version
+        );
         token_id
     }
 }

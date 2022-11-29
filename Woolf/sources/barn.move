@@ -414,7 +414,7 @@ module woolf_deployer::barn {
     //     let account_addr = signer::address_of(account);
     //     let token_id = token::create_token_id_raw(
     //         account_addr,
-    //         config::collection_name_v1(),
+    //         config::collection_name(),
     //         string::utf8(b"123"),
     //         0
     //     );
@@ -463,7 +463,7 @@ module woolf_deployer::barn {
 
         debug::print(&token_id);
 
-        add_many_to_barn_and_pack(account, config::collection_name_v1(), string::utf8(b"Wolf #123"), 1);
+        add_many_to_barn_and_pack(account, config::collection_name(), string::utf8(b"Wolf #123"), 1);
 
         assert!(token::balance_of(account_addr, token_id) == 0, 2);
         let barn = borrow_global<Barn>(@woolf_deployer);
@@ -540,7 +540,7 @@ module woolf_deployer::barn {
         traits::update_token_traits(token_id, true, 1, 0, 0, 2, 1, 0, 1, 0, 1);
         token_helper::transfer_token_to(account, token_id);
         assert!(token::balance_of(account_addr, token_id) == 1, 1);
-        add_many_to_barn_and_pack(account, config::collection_name_v1(), string::utf8(b"Wolf #123"), 1);
+        add_many_to_barn_and_pack(account, config::collection_name(), string::utf8(b"Wolf #123"), 1);
 
         timestamp::update_global_time_for_test_secs(200);
         debug::print(&timestamp::now_seconds());

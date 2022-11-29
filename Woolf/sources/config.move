@@ -26,8 +26,9 @@ module woolf_deployer::config {
     const CONFIG_KEY_TOKEN_NAME_WOLF_PREFIX: vector<u8> = b"token_name_wolf_prefix";
     const CONFIG_KEY_TOKEN_NAME_SHEEP_PREFIX: vector<u8> = b"token_name_sheep_prefix";
 
-    const COLLECTION_NAME_V1: vector<u8> = b"Woolf Game NFT";
-
+    const COLLECTION_NAME: vector<u8> = b"Woolf Game NFT";
+    const COLLECTION_DESCRIPTION: vector<u8> = b"Woolf game NFT from overfive team";
+    const COLLECTION_URI: vector<u8> = b"https://woolfgame.com";
     //
     // Errors
     //
@@ -105,8 +106,16 @@ module woolf_deployer::config {
         assert!(signer_is_admin(sign), error::permission_denied(ENOT_AUTHORIZED));
     }
 
-    public fun collection_name_v1(): String {
-        return string::utf8(COLLECTION_NAME_V1)
+    public fun collection_name(): String {
+        string::utf8(COLLECTION_NAME)
+    }
+
+    public fun collection_description(): String {
+        string::utf8(COLLECTION_DESCRIPTION)
+    }
+
+    public fun collection_uri(): String {
+        string::utf8(COLLECTION_URI)
     }
 
     //
