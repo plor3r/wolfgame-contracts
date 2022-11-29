@@ -79,8 +79,22 @@ module woolf_deployer::barn {
         value: u64,
     }
 
+    struct SheepClaimedEvent has store, drop {
+        token_id: TokenId,
+        earned: u64,
+        unstake: bool,
+    }
+
+    struct WolfClaimedEvent has store, drop {
+        token_id: TokenId,
+        earned: u64,
+        unstake: bool,
+    }
+
     struct Events has key {
-        token_staked_events: event::EventHandle<TokenStakedEvent>
+        token_staked_events: event::EventHandle<TokenStakedEvent>,
+        sheep_claimed_events: event::EventHandle<SheepClaimedEvent>,
+        wolf_claimed_events: event::EventHandle<WolfClaimedEvent>,
     }
 
     public(friend) fun initialize(framework: &signer) {
@@ -96,6 +110,8 @@ module woolf_deployer::barn {
         });
         move_to(framework, Events {
             token_staked_events: account::new_event_handle<TokenStakedEvent>(framework),
+            sheep_claimed_events: account::new_event_handle<SheepClaimedEvent>(framework),
+            wolf_claimed_events: account::new_event_handle<WolfClaimedEvent>(framework),
         });
     }
 
@@ -210,7 +226,7 @@ module woolf_deployer::barn {
         collection_name: String, //the name of the collection owned by Creator
         token_name: String,
         property_version: u64,
-    ) acquires Barn, Pack, Data {
+    ) acquires Barn, Pack, Data, Events {
         let token_id = token_helper::create_token_id(collection_name, token_name, property_version);
         let token_ids = vector<TokenId>[token_id];
         claim_many_from_barn_and_pack_internal(staker, token_ids, true);
@@ -222,7 +238,7 @@ module woolf_deployer::barn {
         account: &signer,
         token_ids: vector<TokenId>,
         unstake: bool
-    ) acquires Data, Barn, Pack {
+    ) acquires Data, Barn, Pack, Events {
         update_earnings();
         let owed: u64 = 0;
         let i: u64 = 0;
@@ -241,7 +257,7 @@ module woolf_deployer::barn {
     // realize $WOOL earnings for a single Sheep and optionally unstake it
     // if not unstaking, pay a 20% tax to the staked Wolves
     // if unstaking, there is a 50% chance all $WOOL is stolen
-    fun claim_sheep_from_barn(owner: &signer, token_id: TokenId, unstake: bool): u64 acquires Barn, Data {
+    fun claim_sheep_from_barn(owner: &signer, token_id: TokenId, unstake: bool): u64 acquires Barn, Data, Events {
         let barn = borrow_global_mut<Barn>(@woolf_deployer);
         let data = borrow_global_mut<Data>(@woolf_deployer);
         let stake = table::borrow_mut(&mut barn.items, token_id);
@@ -270,13 +286,19 @@ module woolf_deployer::barn {
             token::deposit_token(owner, token);
             data.total_sheep_staked = data.total_sheep_staked - 1;
         };
-        // TODO emit SheepClaimed(tokenId, owed, unstake);
+        // emit SheepClaimed(tokenId, owed, unstake);
+        event::emit_event<SheepClaimedEvent>(
+            &mut borrow_global_mut<Events>(@woolf_deployer).sheep_claimed_events,
+            SheepClaimedEvent {
+                token_id, earned: owed, unstake
+            },
+        );
         owed
     }
 
     // realize $WOOL earnings for a single Wolf and optionally unstake it
     // Wolves earn $WOOL proportional to their Alpha rank
-    fun claim_wolf_from_pack(owner: &signer, token_id: TokenId, unstake: bool): u64 acquires Pack, Data {
+    fun claim_wolf_from_pack(owner: &signer, token_id: TokenId, unstake: bool): u64 acquires Pack, Data, Events {
         let alpha = alpha_for_wolf(signer::address_of(owner), token_id);
         debug::print(&300);
         let pack = borrow_global_mut<Pack>(@woolf_deployer);
@@ -309,6 +331,13 @@ module woolf_deployer::barn {
             // stake.token = token;
         };
         // TODO emit WolfClaimed(tokenId, owed, unstake);
+        // emit SheepClaimed(tokenId, owed, unstake);
+        event::emit_event<WolfClaimedEvent>(
+            &mut borrow_global_mut<Events>(@woolf_deployer).wolf_claimed_events,
+            WolfClaimedEvent {
+                token_id, earned: owed, unstake
+            },
+        );
         owed
     }
 
