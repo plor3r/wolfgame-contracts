@@ -6,10 +6,12 @@ module woolf_deployer::barn {
     // use std::debug;
     use std::string::String;
 
+    use aptos_framework::account;
+    use aptos_framework::event;
     use aptos_framework::timestamp;
-    use aptos_token::token::{Self, TokenId, Token};
     use aptos_std::table::{Self, Table};
     use aptos_std::debug;
+    use aptos_token::token::{Self, TokenId, Token};
 
     use woolf_deployer::random;
     use woolf_deployer::wool;
@@ -71,6 +73,16 @@ module woolf_deployer::barn {
         wool_per_alpha: u64,
     }
 
+    struct TokenStakedEvent has store, drop {
+        owner: address,
+        token_id: TokenId,
+        value: u64,
+    }
+
+    struct Events has key {
+        token_staked_events: event::EventHandle<TokenStakedEvent>
+    }
+
     public(friend) fun initialize(framework: &signer) {
         move_to(framework, Barn { items: table::new<TokenId, Stake>() });
         move_to(framework, Pack { items: table::new<u8, vector<Stake>>(), pack_indices: table::new<TokenId, u64>() });
@@ -82,6 +94,9 @@ module woolf_deployer::barn {
             unaccounted_rewards: 0,
             wool_per_alpha: 0,
         });
+        move_to(framework, Events {
+            token_staked_events: account::new_event_handle<TokenStakedEvent>(framework),
+        });
     }
 
     public entry fun add_many_to_barn_and_pack(
@@ -89,7 +104,7 @@ module woolf_deployer::barn {
         collection_name: String,
         token_name: String,
         property_version: u64,
-    ) acquires Barn, Pack, Data {
+    ) acquires Barn, Pack, Data, Events {
         let token_id = token_helper::create_token_id(collection_name, token_name, property_version);
         let token = token::withdraw_token(staker, token_id, 1);
         let tokens = vector<Token>[token];
@@ -100,7 +115,7 @@ module woolf_deployer::barn {
     public(friend) fun add_many_to_barn_and_pack_internal(
         owner: address,
         tokens: vector<Token>
-    ) acquires Barn, Pack, Data {
+    ) acquires Barn, Pack, Data, Events {
         let i = vector::length<Token>(&tokens);
         while (i > 0) {
             let token = vector::pop_back(&mut tokens);
@@ -116,7 +131,7 @@ module woolf_deployer::barn {
     }
 
     // adds a single Sheep to the Barn
-    fun add_sheep_to_barn(owner: address, token: Token) acquires Barn, Data {
+    fun add_sheep_to_barn(owner: address, token: Token) acquires Barn, Data, Events {
         update_earnings();
         let token_id = token::get_token_id(&token);
         let stake = Stake {
@@ -129,10 +144,17 @@ module woolf_deployer::barn {
 
         let barn = borrow_global_mut<Barn>(@woolf_deployer);
         table::add(&mut barn.items, token_id, stake);
+
+        event::emit_event<TokenStakedEvent>(
+            &mut borrow_global_mut<Events>(@woolf_deployer).token_staked_events,
+            TokenStakedEvent {
+                owner, token_id, value: timestamp::now_seconds()
+            },
+        );
     }
 
     // adds a single Wolf to the Pack
-    fun add_wolf_to_pack(owner: address, token: Token) acquires Pack, Data {
+    fun add_wolf_to_pack(owner: address, token: Token) acquires Pack, Data, Events {
         let data = borrow_global_mut<Data>(@woolf_deployer);
         let token_id = token::get_token_id(&token);
 
@@ -158,6 +180,13 @@ module woolf_deployer::barn {
         // Store the location of the wolf in the Pack
         let token_index = vector::length(token_pack) - 1;
         table::upsert(&mut pack.pack_indices, token_id, token_index);
+
+        event::emit_event<TokenStakedEvent>(
+            &mut borrow_global_mut<Events>(@woolf_deployer).token_staked_events,
+            TokenStakedEvent {
+                owner, token_id, value: data.wool_per_alpha
+            },
+        );
     }
 
     // add $WOOL to claimable pot for the Pack
@@ -336,8 +365,6 @@ module woolf_deployer::barn {
     #[test_only]
     use woolf_deployer::config;
     #[test_only]
-    use aptos_framework::account;
-    #[test_only]
     use woolf_deployer::utils::setup_timestamp;
     // #[test_only]
     // use std::string::String;
@@ -363,7 +390,7 @@ module woolf_deployer::barn {
     // }
 
     #[test(aptos = @0x1, admin = @woolf_deployer, account = @0x1234)]
-    fun test_add_many_to_barn_and_pack(aptos: &signer, admin: &signer, account: &signer) acquires Barn, Pack, Data {
+    fun test_add_many_to_barn_and_pack(aptos: &signer, admin: &signer, account: &signer) acquires Barn, Pack, Data, Events {
         account::create_account_for_test(signer::address_of(account));
         account::create_account_for_test(signer::address_of(admin));
 
@@ -405,7 +432,7 @@ module woolf_deployer::barn {
     }
 
     #[test(aptos = @0x1, admin = @woolf_deployer, account = @0x1111)]
-    fun test_add_wolf_to_pack(aptos: &signer, admin: &signer, account: &signer) acquires Pack, Data {
+    fun test_add_wolf_to_pack(aptos: &signer, admin: &signer, account: &signer) acquires Pack, Data, Events {
         account::create_account_for_test(signer::address_of(account));
         account::create_account_for_test(signer::address_of(admin));
         setup_timestamp(aptos);
@@ -443,7 +470,7 @@ module woolf_deployer::barn {
     }
 
     #[test(aptos = @0x1, admin = @woolf_deployer, account = @0x1111)]
-    fun test_claim_sheep_from_barn(aptos: &signer, admin: &signer, account: &signer) acquires Barn, Pack, Data {
+    fun test_claim_sheep_from_barn(aptos: &signer, admin: &signer, account: &signer) acquires Barn, Pack, Data, Events {
         account::create_account_for_test(signer::address_of(account));
         account::create_account_for_test(signer::address_of(admin));
 
@@ -484,7 +511,7 @@ module woolf_deployer::barn {
     }
 
     #[test(aptos = @0x1, admin = @woolf_deployer, account = @0x1111)]
-    fun test_claim_wolf_from_pack(aptos: &signer, admin: &signer, account: &signer) acquires Pack, Data {
+    fun test_claim_wolf_from_pack(aptos: &signer, admin: &signer, account: &signer) acquires Pack, Data, Events {
         account::create_account_for_test(signer::address_of(account));
         account::create_account_for_test(signer::address_of(admin));
         setup_timestamp(aptos);
