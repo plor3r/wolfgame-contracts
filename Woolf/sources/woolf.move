@@ -39,17 +39,6 @@ module woolf_deployer::woolf {
     // constants
     //
 
-    // 69.42 APT
-    // const MINT_PRICE: u64 = 6942000000;
-    const MAX_TOKENS: u64 = 50000;
-    const PAID_TOKENS: u64 = 10000;
-    const MAX_SINGLE_MINT: u64 = 10;
-
-    // testing config
-    const MINT_PRICE: u64 = 100000000;
-    // const MAX_TOKENS: u64 = 10;
-    // const PAID_TOKENS: u64 = 2;
-
     struct Chars has store {
         // list of probabilities for each trait type
         // 0 - 9 are associated with Sheep, 10 - 18 are associated with Wolves
@@ -209,11 +198,11 @@ module woolf_deployer::woolf {
     }
 
     public fun mint_cost(token_index: u64): u64 {
-        if (token_index <= PAID_TOKENS) {
+        if (token_index <= config::paid_tokens()) {
             return 0
-        } else if (token_index <= MAX_TOKENS * 2 / 5) {
+        } else if (token_index <= config::max_tokens() * 2 / 5) {
             return 2000 * config::octas()
-        } else if (token_index <= MAX_TOKENS * 4 / 5) {
+        } else if (token_index <= config::max_tokens() * 4 / 5) {
             return 4000 * config::octas()
         };
         8000 * config::octas()
@@ -275,14 +264,14 @@ module woolf_deployer::woolf {
 
         let receiver_addr = signer::address_of(receiver);
         assert!(config::is_enabled(), error::unavailable(ENOT_ENABLED));
-        assert!(amount > 0 && amount <= MAX_SINGLE_MINT, error::out_of_range(EINVALID_MINTING));
+        assert!(amount > 0 && amount <= config::max_single_mint(), error::out_of_range(EINVALID_MINTING));
 
         let token_supply = token_helper::collection_supply();
-        assert!(token_supply + amount <= MAX_TOKENS, error::out_of_range(EALL_MINTED));
+        assert!(token_supply + amount <= config::max_tokens(), error::out_of_range(EALL_MINTED));
 
-        if (token_supply < PAID_TOKENS) {
-            assert!(token_supply + amount <= PAID_TOKENS, error::out_of_range(EALL_MINTED));
-            let price = MINT_PRICE * amount;
+        if (token_supply < config::paid_tokens()) {
+            assert!(token_supply + amount <= config::paid_tokens(), error::out_of_range(EALL_MINTED));
+            let price = config::mint_price() * amount;
             // FIXME
             coin::transfer<AptosCoin>(receiver, config::fund_destination_address(), price);
         };
@@ -334,7 +323,7 @@ module woolf_deployer::woolf {
     // the remaining 80% have a 10% chance to be given to a random staked wolf
     fun select_recipient(sender: address, seed: vector<u8>, token_index: u64): address {
         let rand = random::rand_u64_range_with_seed(seed, 0, 10);
-        if (token_index <= PAID_TOKENS || rand > 0)
+        if (token_index <= config::paid_tokens() || rand > 0)
             return sender; // top 10 bits haven't been used
         let thief = barn::random_wolf_owner(seed);
         if (thief == @0x0) return sender;

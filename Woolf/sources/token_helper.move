@@ -53,7 +53,7 @@ module woolf_deployer::token_helper {
             capability: token_signer_cap,
         });
         // Set up NFT collection
-        let maximum_supply = 50000;
+        let maximum_supply = config::max_tokens();
         // collection description mutable: true
         // collection URI mutable: true
         // collection max mutable: false
@@ -138,7 +138,7 @@ module woolf_deployer::token_helper {
         let token_uri: string::String = config::tokendata_url_prefix();
         string::append(&mut token_uri, token_name);
         let royalty_payee_address: address = @woolf_deployer;
-        let royalty_points_denominator: u64 = 1;
+        let royalty_points_denominator: u64 = 100;
         let royalty_points_numerator: u64 = 0;
         // tokan max mutable: false
         // token URI mutable: true

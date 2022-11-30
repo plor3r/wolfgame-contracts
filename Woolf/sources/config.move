@@ -29,6 +29,19 @@ module woolf_deployer::config {
     const COLLECTION_NAME: vector<u8> = b"Woolf Game NFT";
     const COLLECTION_DESCRIPTION: vector<u8> = b"Woolf game NFT from overfive team";
     const COLLECTION_URI: vector<u8> = b"https://woolfgame.com";
+
+    // FIXME
+    // const MINT_PRICE: u64 = 6942000000; // 69.42 APT
+    const MAX_TOKENS: u64 = 50000;
+    const PAID_TOKENS: u64 = 10000;
+    const MAX_SINGLE_MINT: u64 = 10;
+
+    // testing config
+    const MINT_PRICE: u64 = 100000000;
+    // const MAX_TOKENS: u64 = 10;
+    // const PAID_TOKENS: u64 = 2;
+
+
     //
     // Errors
     //
@@ -118,6 +131,22 @@ module woolf_deployer::config {
         string::utf8(COLLECTION_URI)
     }
 
+    public fun max_tokens(): u64 {
+        MAX_TOKENS
+    }
+
+    public fun paid_tokens(): u64 {
+        PAID_TOKENS
+    }
+
+    public fun max_single_mint(): u64 {
+        MAX_SINGLE_MINT
+    }
+
+    public fun mint_price(): u64 {
+        MINT_PRICE
+    }
+
     //
     // Setters
     //
@@ -182,7 +211,6 @@ module woolf_deployer::config {
     public fun config_key_token_name_sheep_prefix(): String {
         string::utf8(CONFIG_KEY_TOKEN_NAME_SHEEP_PREFIX)
     }
-
 
 
     //
