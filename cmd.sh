@@ -9,7 +9,7 @@ aptos move compile --package-dir Woolf --named-addresses woolf_deployer=${woolf_
 
 aptos move test --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
 
-aptos move publish --assume-yes --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
+#aptos move publish --assume-yes --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
 
 ## mint woolf nft
 #aptos move run --assume-yes --function-id ${woolf_deployer}::woolf::mint --args u64:1 bool:false

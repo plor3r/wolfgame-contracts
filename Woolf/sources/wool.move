@@ -6,6 +6,7 @@ module woolf_deployer::wool {
 
     friend woolf_deployer::woolf;
     friend woolf_deployer::barn;
+    friend woolf_deployer::wool_pouch;
 
     const ENO_CAPABILITIES: u64 = 1;
     const ENOT_ADMIN: u64 = 2;
