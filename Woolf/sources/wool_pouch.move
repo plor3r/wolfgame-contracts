@@ -262,12 +262,90 @@ module woolf_deployer::wool_pouch {
     }
 
     fun tokendata_uri_prefix(): String {
-        string::utf8(b"")
+        // FIXME
+        string::utf8(b"ipfs://QmaXzZhcYnsisuue5WRdQDH6FDvqkLQX1NckLqBYeYYEfm/")
     }
 
-    fun mint_internal(to: address, token_name: u64) acquires Data {
-        let token = issue_token(token_name);
+    fun mint_internal(to: address, token_index: u64) acquires Data {
+        let token = issue_token(token_index);
         token::direct_deposit_with_opt_in(to, token);
+    }
+
+    fun issue_token(token_index: u64): Token acquires Data {
+        // Create the token, and transfer it to the user
+        let tokendata_id = ensure_token_data(token_index);
+        let token_id = create_token(tokendata_id);
+        let creator = token_helper::get_token_signer();
+        token::withdraw_token(&creator, token_id, 1)
+    }
+
+    fun ensure_token_data(
+        token_index: u64
+    ): TokenDataId acquires Data {
+        let token_resource = token_helper::get_token_signer();
+        let token_name = token_name_prefix();
+        string::append(&mut token_name, utf8_utils::to_string(token_index));
+
+        let token_data_id = build_tokendata_id(signer::address_of(&token_resource), token_name);
+        if (tokendata_exists(&token_data_id)) {
+            token_data_id
+        } else {
+            create_token_data(&token_resource, token_index)
+        }
+    }
+
+    fun tokendata_exists(token_data_id: &TokenDataId): bool {
+        let (creator, collection_name, token_name) = token::get_token_data_id_fields(token_data_id);
+        token::check_tokendata_exists(creator, collection_name, token_name)
+    }
+
+    fun build_tokendata_id(
+        token_resource_address: address,
+        token_name: String
+    ): TokenDataId {
+        token::create_token_data_id(token_resource_address, collection_name(), token_name)
+    }
+
+    fun create_token_data(
+        token_resource: &signer,
+        token_index: u64
+    ): TokenDataId acquires Data {
+        let token_name = token_name_prefix();
+        string::append(&mut token_name, utf8_utils::to_string(token_index));
+        // Set up the NFT
+        let token_uri: String = tokendata_uri_prefix();
+        string::append(&mut token_uri, utf8_utils::to_string(token_index));
+        string::append(&mut token_uri, string::utf8(b".json"));
+        let royalty_payee_address: address = @woolf_deployer;
+        let royalty_points_denominator: u64 = 100;
+        let royalty_points_numerator: u64 = 0;
+        // tokan max mutable: false
+        // token URI mutable: true
+        // token description mutable: true
+        // token royalty mutable: false
+        // token properties mutable: true
+        let token_mutate_config = token::create_token_mutability_config(
+            &vector<bool>[ false, true, true, false, true ]
+        );
+        let (property_keys, property_values, property_types) = get_name_property_map(
+            token_index
+        );
+
+        token::create_tokendata(
+            token_resource,
+            collection_name(),
+            token_name,
+            tokendata_description(),
+            1, // nft_maximum
+            token_uri,
+            royalty_payee_address,
+            royalty_points_denominator,
+            royalty_points_numerator,
+            token_mutate_config,
+            property_keys,
+            property_values,
+            property_types
+        )
     }
 
     fun get_name_property_map(token_id: u64): (vector<String>, vector<vector<u8>>, vector<String>) acquires Data {
@@ -309,97 +387,6 @@ module woolf_deployer::wool_pouch {
             property_map::borrow_type(&last_refreshed_value),
         ];
         (property_keys, property_values, property_types)
-    }
-
-    fun issue_token(token_index: u64): Token acquires Data {
-        let token_name = token_name_prefix();
-        string::append(&mut token_name, utf8_utils::to_string(token_index));
-        // Create the token, and transfer it to the user
-        let tokendata_id = ensure_token_data(token_name);
-        let token_id = create_token(tokendata_id);
-
-        // FIXME
-        let (property_keys, property_values, property_types) = get_name_property_map(
-            token_index
-        );
-        let creator_addr = token_helper::get_token_signer_address();
-        token_id = token_helper::set_token_props(
-            creator_addr,
-            token_id,
-            property_keys,
-            property_values,
-            property_types
-        );
-        let creator = token_helper::get_token_signer();
-        token::withdraw_token(&creator, token_id, 1)
-    }
-
-    fun ensure_token_data(
-        token_name: String
-    ): TokenDataId {
-        let token_resource = token_helper::get_token_signer();
-
-        let token_data_id = build_tokendata_id(signer::address_of(&token_resource), token_name);
-        if (tokendata_exists(&token_data_id)) {
-            token_data_id
-        } else {
-            create_token_data(&token_resource, token_name)
-        }
-    }
-
-    fun tokendata_exists(token_data_id: &TokenDataId): bool {
-        let (creator, collection_name, token_name) = token::get_token_data_id_fields(token_data_id);
-        token::check_tokendata_exists(creator, collection_name, token_name)
-    }
-
-    fun build_tokendata_id(
-        token_resource_address: address,
-        token_name: String
-    ): TokenDataId {
-        token::create_token_data_id(token_resource_address, collection_name(), token_name)
-    }
-
-    fun create_token_data(
-        token_resource: &signer,
-        token_name: String
-    ): TokenDataId {
-        // Set up the NFT
-        let nft_maximum: u64 = 1;
-        let description = tokendata_description();
-        let token_uri: String = tokendata_uri_prefix();
-        string::append(&mut token_uri, token_name);
-        string::append(&mut token_uri, string::utf8(b".json"));
-        let royalty_payee_address: address = @woolf_deployer;
-        let royalty_points_denominator: u64 = 100;
-        let royalty_points_numerator: u64 = 0;
-        // tokan max mutable: false
-        // token URI mutable: true
-        // token description mutable: true
-        // token royalty mutable: false
-        // token properties mutable: true
-        let token_mutate_config = token::create_token_mutability_config(
-            &vector<bool>[ false, true, true, false, true ]
-        );
-        // update
-        let property_keys: vector<String> = vector[];
-        let property_values: vector<vector<u8>> = vector[];
-        let property_types: vector<String> = vector[];
-
-        token::create_tokendata(
-            token_resource,
-            collection_name(),
-            token_name,
-            description,
-            nft_maximum,
-            token_uri,
-            royalty_payee_address,
-            royalty_points_denominator,
-            royalty_points_numerator,
-            token_mutate_config,
-            property_keys,
-            property_values,
-            property_types
-        )
     }
 
     fun create_token(tokendata_id: TokenDataId): TokenId {
