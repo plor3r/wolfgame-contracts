@@ -101,6 +101,11 @@ module woolf_deployer::wool_pouch {
         assert!(&data.paused == &false, error::permission_denied(EPAUSED));
     }
 
+    fun assert_is_owner(owner: address, token_index: u64) {
+        let token_id = create_token_id(token_index);
+        assert!(token::balance_of(owner, token_id) == 1, ENOT_OWNER);
+    }
+
     public entry fun set_paused(paused: bool) acquires Data {
         let data = borrow_global_mut<Data>(@woolf_deployer);
         data.paused = paused;
@@ -109,7 +114,7 @@ module woolf_deployer::wool_pouch {
     // claim WOOL tokens from a pouch
     public entry fun claim(owner: &signer, token_id: u64) acquires Data, Events {
         assert_not_paused();
-        // FIXME add token assert owner
+        assert_is_owner(signer::address_of(owner), token_id);
 
         let data = borrow_global_mut<Data>(@woolf_deployer);
         let available = amount_available_internal(data, token_id);
@@ -134,8 +139,8 @@ module woolf_deployer::wool_pouch {
         let i: u64 = 0;
         let data = borrow_global_mut<Data>(@woolf_deployer);
         while (i < vector::length(&token_ids)) {
-            // FIXME add token assert owner
             let token_id = *vector::borrow(&token_ids, i);
+            assert_is_owner(signer::address_of(owner), token_id);
             available = amount_available_internal(data, token_id);
             assert!(table::contains(&data.pouches, token_id), error::not_found(EPOUCH_NOT_FOUND));
 
@@ -175,7 +180,9 @@ module woolf_deployer::wool_pouch {
         elapsed * pouch.amount / (pouch.duration * SECONDS_PER_DAY) + if (pouch.initial_claimed) 0 else START_VALUE
     }
 
-    /** CONTROLLER */
+    //
+    // CONTROLLER
+    //
 
     // mints $WOOL to a recipient
     public entry fun mint(controller: &signer, to: address, amount: u64, duration: u64) acquires Data {
@@ -397,5 +404,20 @@ module woolf_deployer::wool_pouch {
         assert!(token::check_collection_exists(signer::address_of(&token_resource), collection_name), 125);
 
         token::mint_token(&token_resource, tokendata_id, 1)
+    }
+
+    fun create_token_id(
+        token_index: u64,
+    ): TokenId {
+        let resource_signer_address = token_helper::get_token_signer_address();
+        let token_name = token_name_prefix();
+        string::append(&mut token_name, utf8_utils::to_string(token_index));
+        let token_id = token::create_token_id_raw(
+            resource_signer_address,
+            collection_name(),
+            token_name,
+            0
+        );
+        token_id
     }
 }
