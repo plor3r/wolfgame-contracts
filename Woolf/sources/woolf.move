@@ -23,6 +23,7 @@ module woolf_deployer::woolf {
     use woolf_deployer::utf8_utils;
     use woolf_deployer::random;
     use woolf_deployer::traits;
+    use woolf_deployer::wool_pouch;
 
     /// The Naming Service contract is not enabled
     const ENOT_ENABLED: u64 = 1;
@@ -94,6 +95,7 @@ module woolf_deployer::woolf {
         token_helper::initialize(admin);
         barn::initialize(admin);
         wool::initialize(admin);
+        wool_pouch::initialize(admin);
         traits::initialize(admin);
         initialize(admin);
     }
@@ -362,7 +364,7 @@ module woolf_deployer::woolf {
         let is_sheep = random::rand_u64_range_no_sender(0, 100) >= 10;
         let shift = if (is_sheep) 0 else 9;
         SheepWolf {
-            is_sheep: is_sheep,
+            is_sheep,
             fur: select_trait(dashboard, random::rand_u64_range_no_sender(0, 255), 0 + shift),
             head: select_trait(dashboard, random::rand_u64_range_no_sender(0, 255), 1 + shift),
             ears: select_trait(dashboard, random::rand_u64_range_no_sender(0, 255), 2 + shift),

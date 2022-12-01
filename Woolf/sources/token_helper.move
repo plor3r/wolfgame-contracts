@@ -4,6 +4,7 @@
 module woolf_deployer::token_helper {
     friend woolf_deployer::woolf;
     friend woolf_deployer::barn;
+    friend woolf_deployer::wool_pouch;
 
     use aptos_framework::timestamp;
     use std::string::{Self, String};
