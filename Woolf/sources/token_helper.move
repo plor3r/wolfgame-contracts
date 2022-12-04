@@ -223,7 +223,7 @@ module woolf_deployer::token_helper {
         token::opt_in_direct_transfer(account, op_in);
     }
 
-    public(friend) fun create_token_id(
+    public fun create_token_id(
         collection_name: String, //the name of the collection owned by Creator
         token_name: String,
         property_version: u64,

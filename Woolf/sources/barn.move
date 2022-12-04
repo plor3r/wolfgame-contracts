@@ -205,6 +205,17 @@ module woolf_deployer::barn {
         );
     }
 
+    public fun sheep_in_barn(token_id: TokenId): bool acquires Barn {
+        let barn = borrow_global_mut<Barn>(@woolf_deployer);
+        table::contains(&barn.items, token_id)
+    }
+
+    public fun get_stake_value(token_id: TokenId): u64 acquires Barn{
+        let barn = borrow_global<Barn>(@woolf_deployer);
+        let stake = table::borrow(&barn.items, token_id);
+        stake.value
+    }
+
     // add $WOOL to claimable pot for the Pack
     fun pay_wolf_tax(data: &mut Data, amount: u64) {
         // let data = borrow_global_mut<Data>(@woolf_deployer);
@@ -347,6 +358,10 @@ module woolf_deployer::barn {
     }
 
     /** ACCOUNTING */
+
+    public fun max_alpha(): u8 {
+        MAX_ALPHA
+    }
 
     fun alpha_for_wolf(token_owner: address, token_id: TokenId): u8 {
         let (_, _, _, _, _, _, _, _, _, alpha_index) = traits::get_token_traits(token_owner, token_id);

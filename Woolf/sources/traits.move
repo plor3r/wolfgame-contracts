@@ -6,7 +6,7 @@ module woolf_deployer::traits {
     use std::option::{Self, Option};
     use aptos_std::table::Table;
     use aptos_std::table;
-    use aptos_token::token::TokenId;
+    use aptos_token::token::{Self, TokenId};
     use aptos_token::property_map;
 
     use woolf_deployer::base64;
@@ -33,6 +33,7 @@ module woolf_deployer::traits {
         // {trait_type => {id => trait}}
         alphas: vector<vector<u8>>,
         token_traits: Table<TokenId, SheepWolf>,
+        index_traits: Table<u64, SheepWolf>
     }
 
     struct SheepWolf has drop, store, copy, key {
@@ -64,7 +65,10 @@ module woolf_deployer::traits {
         let trait_data: Table<u8, Table<u8, Trait>> = table::new();
         let alphas = vector[b"8", b"7", b"6", b"5"];
 
-        move_to(account, Data { trait_types, trait_data, alphas, token_traits: table::new() });
+        move_to(
+            account,
+            Data { trait_types, trait_data, alphas, token_traits: table::new(), index_traits: table::new() }
+        );
 
         upload_traits(0, vector<u8>[0,1,2,3,4], vector[
             Trait { name: string::utf8(b"Gray"), png: string::utf8(b"")},
@@ -316,6 +320,23 @@ module woolf_deployer::traits {
         table::upsert(&mut data.token_traits, token_id, SheepWolf {
             is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index,
         });
+        let (_,_,name,_) = token::get_token_id_fields(&token_id);
+        let token_index: u64 = 0;
+        let name_bytes = *string::bytes(&name);
+        let i = 0;
+        let k: u64 = 1;
+        while ( i < vector::length(&name_bytes) ) {
+            let n = vector::pop_back(&mut name_bytes);
+            if (vector::singleton(n) == b"#") {
+                break
+            };
+            token_index = token_index + ((n as u64) - 48) * k;
+            k = k * 10;
+            i = i + 1;
+        };
+        table::upsert(&mut data.index_traits, token_index, SheepWolf {
+            is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index,
+        });
     }
 
     public entry fun upload_traits(
@@ -342,7 +363,22 @@ module woolf_deployer::traits {
         }
     }
 
-    public fun get_token_traits(_token_owner: address, token_id: TokenId): (bool, u8, u8, u8, u8, u8, u8, u8, u8, u8) acquires Data {
+    public fun get_index_traits(
+        // _token_owner: address,
+        token_index: u64
+    ): (bool, u8, u8, u8, u8, u8, u8, u8, u8, u8) acquires Data {
+        let data = borrow_global_mut<Data>(@woolf_deployer);
+        let traits = table::borrow(&data.index_traits, token_index);
+
+        let SheepWolf { is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index } = *traits;
+
+        (is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index)
+    }
+
+    public fun get_token_traits(
+        _token_owner: address,
+        token_id: TokenId
+    ): (bool, u8, u8, u8, u8, u8, u8, u8, u8, u8) acquires Data {
         let data = borrow_global_mut<Data>(@woolf_deployer);
         let traits = table::borrow(&data.token_traits, token_id);
 

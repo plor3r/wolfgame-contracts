@@ -17,6 +17,7 @@ module woolf_deployer::wool_pouch {
     use woolf_deployer::token_helper;
 
     friend woolf_deployer::woolf;
+    friend woolf_deployer::risky_game;
 
     //
     // Errors
@@ -193,8 +194,23 @@ module woolf_deployer::wool_pouch {
                 table::borrow(&data.controllers, controller_addr) == &true,
             error::permission_denied(ENOT_CONTROLLERS)
         );
-        assert!(amount >= START_VALUE, error::invalid_state(EINSUFFICIENT_POUCH));
         data.minted = data.minted + 1;
+        // assert!(amount >= START_VALUE, error::invalid_state(EINSUFFICIENT_POUCH));
+        // table::add(&mut data.pouches, data.minted, Pouch {
+        //     initial_claimed: false,
+        //     duration,
+        //     last_claim_timestamp: timestamp::now_seconds(),
+        //     start_timestamp: timestamp::now_seconds(),
+        //     amount: amount - START_VALUE
+        // });
+        // mint_token_internal(to, data.minted);
+
+        mint_internal(to, amount, duration);
+    }
+
+    public(friend) fun mint_internal(to: address, amount: u64, duration: u64) acquires Data {
+        let data = borrow_global_mut<Data>(@woolf_deployer);
+        assert!(amount >= START_VALUE, error::invalid_state(EINSUFFICIENT_POUCH));
         table::add(&mut data.pouches, data.minted, Pouch {
             initial_claimed: false,
             duration,
@@ -202,7 +218,7 @@ module woolf_deployer::wool_pouch {
             start_timestamp: timestamp::now_seconds(),
             amount: amount - START_VALUE
         });
-        mint_internal(to, data.minted);
+        mint_token_internal(to, data.minted);
     }
 
     public entry fun mint_without_claimable(
@@ -226,7 +242,7 @@ module woolf_deployer::wool_pouch {
             start_timestamp: timestamp::now_seconds(),
             amount,
         });
-        mint_internal(to, data.minted);
+        mint_token_internal(to, data.minted);
     }
 
     // enables an address to mint
@@ -273,7 +289,7 @@ module woolf_deployer::wool_pouch {
         string::utf8(b"ipfs://QmaXzZhcYnsisuue5WRdQDH6FDvqkLQX1NckLqBYeYYEfm/")
     }
 
-    fun mint_internal(to: address, token_index: u64) acquires Data {
+    fun mint_token_internal(to: address, token_index: u64) acquires Data {
         let token = issue_token(token_index);
         token::direct_deposit_with_opt_in(to, token);
     }
