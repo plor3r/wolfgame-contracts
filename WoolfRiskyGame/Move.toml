@@ -11,5 +11,4 @@ subdir = 'aptos-move/framework/aptos-framework'
 local = "../Woolf"
 
 [addresses]
-#woolf_deployer = "_"
-woolf_risky_gamer = "_"
+woolf_deployer = "_"

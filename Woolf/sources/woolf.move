@@ -1,7 +1,7 @@
 module woolf_deployer::woolf {
     use std::error;
     use std::signer;
-    use std::string::{Self, String};
+    use std::string;
     use std::vector;
     use std::debug;
     use std::bcs;
@@ -14,7 +14,7 @@ module woolf_deployer::woolf {
     use aptos_framework::event::EventHandle;
     // use aptos_framework::timestamp;
     use aptos_std::table::{Self, Table};
-    use aptos_token::token::{Self, TokenDataId, TokenId, Token};
+    use aptos_token::token::{Self, TokenDataId, Token};
 
     use woolf_deployer::barn;
     use woolf_deployer::wool;
@@ -383,10 +383,6 @@ module woolf_deployer::woolf {
             return (trait as u8)
         };
         *vector::borrow(vector::borrow(&dashboard.aliases, trait_type), trait)
-    }
-
-    public fun token_uri(token_owner: address, token_id: TokenId): String {
-        traits::token_uri(token_owner, token_id)
     }
 
     //

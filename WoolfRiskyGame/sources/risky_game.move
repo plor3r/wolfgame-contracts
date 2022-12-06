@@ -1,4 +1,4 @@
-module woolf_risky_gamer::risky_game {
+module woolf_deployer::risky_game {
     use std::error;
     use std::signer;
     use std::vector;
@@ -114,19 +114,19 @@ module woolf_risky_gamer::risky_game {
     }
 
     public entry fun setup(owner: &signer) acquires Data {
-        assert!(signer::address_of(owner) == @woolf_risky_gamer, error::permission_denied(ENOT_TOKEN_OWNER));
-        let data = borrow_global_mut<Data>(@woolf_risky_gamer);
+        assert!(signer::address_of(owner) == @woolf_deployer, error::permission_denied(ENOT_TOKEN_OWNER));
+        let data = borrow_global_mut<Data>(@woolf_deployer);
         data.start_time = timestamp::now_seconds();
     }
 
     fun assert_not_paused() acquires Data {
-        let data = borrow_global<Data>(@woolf_risky_gamer);
+        let data = borrow_global<Data>(@woolf_deployer);
         assert!(data.paused == false, error::permission_denied(EPAUSED));
         assert!(data.start_time > 0, error::invalid_state(EPAUSED));
     }
 
     public entry fun set_paused(paused: bool) acquires Data {
-        let data = borrow_global_mut<Data>(@woolf_risky_gamer);
+        let data = borrow_global_mut<Data>(@woolf_deployer);
         data.paused = paused;
     }
 
@@ -140,7 +140,7 @@ module woolf_risky_gamer::risky_game {
         let earned: u64 = 0;
         let i = 0;
         let temp: u64;
-        let data = borrow_global_mut<Data>(@woolf_risky_gamer);
+        let data = borrow_global_mut<Data>(@woolf_deployer);
         while (i < vector::length(&token_ids)) {
             let token_id = *vector::borrow(&token_ids, i);
             assert!(owner_of(token_id) == signer::address_of(player), error::permission_denied(ENOT_TOKEN_OWNER));
@@ -163,7 +163,7 @@ module woolf_risky_gamer::risky_game {
             wool_pouch::mint_internal(signer::address_of(player), earned * 4 / 5, 365 * 4);
         };
         event::emit_event<SafeClaim>(
-            &mut borrow_global_mut<Events>(@woolf_risky_gamer).safe_claim_events,
+            &mut borrow_global_mut<Events>(@woolf_deployer).safe_claim_events,
             SafeClaim {
                 recipient: signer::address_of(player), token_ids, amount: earned
             },
@@ -176,7 +176,7 @@ module woolf_risky_gamer::risky_game {
         token_ids: vector<u64>
     ) acquires Data, Events {
         assert_not_paused();
-        let data = borrow_global_mut<Data>(@woolf_risky_gamer);
+        let data = borrow_global_mut<Data>(@woolf_deployer);
         assert!(data.opt_in_enabled, error::permission_denied(EOPPORTUNITY_PASSED));
 
         let i = 0;
@@ -193,7 +193,7 @@ module woolf_risky_gamer::risky_game {
             i = i + 1;
         };
         event::emit_event<OptForRisk>(
-            &mut borrow_global_mut<Events>(@woolf_risky_gamer).opt_for_risk_events,
+            &mut borrow_global_mut<Events>(@woolf_deployer).opt_for_risk_events,
             OptForRisk {
                 owner: signer::address_of(player), token_ids
             },
@@ -207,7 +207,7 @@ module woolf_risky_gamer::risky_game {
         separate_pouches: bool
     ) acquires Data, Events {
         assert_not_paused();
-        let data = borrow_global_mut<Data>(@woolf_risky_gamer);
+        let data = borrow_global_mut<Data>(@woolf_deployer);
         let earned = 0;
         let i = 0;
         let winners = vector::empty<bool>();
@@ -237,7 +237,7 @@ module woolf_risky_gamer::risky_game {
             wool_pouch::mint_internal(signer::address_of(player), earned, 365 * 4);
         };
         event::emit_event<RiskyClaim>(
-            &mut borrow_global_mut<Events>(@woolf_risky_gamer).risky_claim_events,
+            &mut borrow_global_mut<Events>(@woolf_deployer).risky_claim_events,
             RiskyClaim {
                 recipient: signer::address_of(player),
                 token_ids,
@@ -254,7 +254,7 @@ module woolf_risky_gamer::risky_game {
         separate_pouches: bool
     ) acquires Data, Events {
         assert_not_paused();
-        let data = borrow_global_mut<Data>(@woolf_risky_gamer);
+        let data = borrow_global_mut<Data>(@woolf_deployer);
         let i = 0;
         let temp;
         let earned = 0;
@@ -285,7 +285,7 @@ module woolf_risky_gamer::risky_game {
             wool_pouch::mint_internal(signer::address_of(player), earned, 365 * 4);
         };
         event::emit_event<WolfClaim>(
-            &mut borrow_global_mut<Events>(@woolf_risky_gamer).wolf_claim_events,
+            &mut borrow_global_mut<Events>(@woolf_deployer).wolf_claim_events,
             WolfClaim {
                 recipient: signer::address_of(player), token_ids, amount: earned
             },
@@ -333,7 +333,7 @@ module woolf_risky_gamer::risky_game {
 
     // gets the WOOL due for a Sheep based on their state before Barn v1 was paused
     fun get_wool_due(data: &mut Data, token_index: u64): u64 {
-        // let data = borrow_global<Data>(@woolf_risky_gamer);
+        // let data = borrow_global<Data>(@woolf_deployer);
         let token_id = get_token_id(token_index);
         if (barn::sheep_in_barn(token_id)) {
             let value = barn::get_stake_value(token_id);
