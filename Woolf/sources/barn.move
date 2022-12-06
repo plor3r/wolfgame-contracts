@@ -216,6 +216,12 @@ module woolf_deployer::barn {
         stake.value
     }
 
+    public fun get_stake_owner(token_id: TokenId): address acquires Barn{
+        let barn = borrow_global<Barn>(@woolf_deployer);
+        let stake = table::borrow(&barn.items, token_id);
+        stake.owner
+    }
+
     // add $WOOL to claimable pot for the Pack
     fun pay_wolf_tax(data: &mut Data, amount: u64) {
         // let data = borrow_global_mut<Data>(@woolf_deployer);

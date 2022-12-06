@@ -27,7 +27,7 @@ module woolf_deployer::config {
     const CONFIG_KEY_TOKEN_NAME_SHEEP_PREFIX: vector<u8> = b"token_name_sheep_prefix";
 
     const COLLECTION_NAME: vector<u8> = b"Woolf Game NFT";
-    const COLLECTION_DESCRIPTION: vector<u8> = b"Woolf game NFT from overfive team";
+    const COLLECTION_DESCRIPTION: vector<u8> = b"Woolf game NFT from Alpha Woolf Game team";
     const COLLECTION_URI: vector<u8> = b"https://woolfgame.com";
 
     // FIXME

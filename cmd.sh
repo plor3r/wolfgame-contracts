@@ -2,14 +2,19 @@
 set -x
 
 woolf_deployer=0x648f926c3739dcde18d586bd81b93e9a3e7b3d3b57501991c9e91144d6c1ebbd
+woolf_risky_game=0x178461bf73257e21eba8a2246044e6e77530b6a160380bf5050be18b530ea5f9
 
 aptos account fund-with-faucet --account ${woolf_deployer}
+aptos account fund-with-faucet --account ${woolf_risky_game}
 
 aptos move compile --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
+aptos move compile --package-dir WoolfRiskyGame --named-addresses woolf_risky_game=${woolf_risky_game},woolf_deployer=${woolf_deployer}
 
 aptos move test --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
+aptos move test --package-dir WoolfRiskyGame --named-addresses woolf_risky_game=${woolf_risky_game} woolf_deployer=${woolf_deployer}
 
 aptos move publish --assume-yes --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
+aptos move publish --assume-yes --package-dir WoolfRiskyGame --named-addresses woolf_risky_game=${woolf_risky_game} woolf_deployer=${woolf_deployer}
 
 ## mint woolf nft
 #aptos move run --assume-yes --function-id ${woolf_deployer}::woolf::mint --args u64:1 bool:false
