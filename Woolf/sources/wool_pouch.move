@@ -91,7 +91,6 @@ module woolf_deployer::wool_pouch {
             &token_resource,
             collection_name(),
             collection_description(),
-            // FIXME fix uri for wool pouch
             collection_uri(),
             maximum_supply,
             mutate_setting
@@ -195,21 +194,9 @@ module woolf_deployer::wool_pouch {
                 table::borrow(&data.controllers, controller_addr) == &true,
             error::permission_denied(ENOT_CONTROLLERS)
         );
-        // data.minted = data.minted + 1;
-        // assert!(amount >= START_VALUE, error::invalid_state(EINSUFFICIENT_POUCH));
-        // table::add(&mut data.pouches, data.minted, Pouch {
-        //     initial_claimed: false,
-        //     duration,
-        //     last_claim_timestamp: timestamp::now_seconds(),
-        //     start_timestamp: timestamp::now_seconds(),
-        //     amount: amount - START_VALUE
-        // });
-        // mint_token_internal(to, data.minted);
-
         mint_internal(to, amount, duration);
     }
 
-    // FIXME fix public
     public(friend) fun mint_internal(to: address, amount: u64, duration: u64) acquires Data {
         let data = borrow_global_mut<Data>(@woolf_deployer);
         assert!(amount >= START_VALUE, error::invalid_state(EINSUFFICIENT_POUCH));
@@ -275,6 +262,7 @@ module woolf_deployer::wool_pouch {
     }
 
     fun collection_uri(): String {
+        // FIXME
         string::utf8(b"")
     }
 

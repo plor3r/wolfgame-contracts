@@ -36,13 +36,6 @@ module woolf_deployer::wool {
         };
     }
 
-    #[test_only]
-    public(friend) fun register_coin_test(account: &signer) {
-        if (!coin::is_account_registered<Wool>(signer::address_of(account))) {
-            coin::register<Wool>(account);
-        };
-    }
-
     public(friend) fun mint_internal(
         to: address, amount: u64
     ) acquires Caps {
@@ -94,5 +87,12 @@ module woolf_deployer::wool {
 
     public entry fun transfer(from: &signer, to: address, amount: u64) {
         coin::transfer<Wool>(from, to, amount);
+    }
+
+    #[test_only]
+    public(friend) fun register_coin_test(account: &signer) {
+        if (!coin::is_account_registered<Wool>(signer::address_of(account))) {
+            coin::register<Wool>(account);
+        };
     }
 }

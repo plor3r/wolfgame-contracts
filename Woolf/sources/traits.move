@@ -8,6 +8,8 @@ module woolf_deployer::traits {
     use aptos_token::token::{Self, TokenId};
     use aptos_token::property_map;
 
+    use woolf_deployer::random;
+
     friend woolf_deployer::woolf;
     friend woolf_deployer::barn;
 
@@ -30,7 +32,9 @@ module woolf_deployer::traits {
         // {trait_type => {id => trait}}
         alphas: vector<vector<u8>>,
         token_traits: Table<TokenId, SheepWolf>,
-        index_traits: Table<u64, SheepWolf>
+        index_traits: Table<u64, SheepWolf>,
+        rarities: vector<vector<u8>>,
+        aliases: vector<vector<u8>>,
     }
 
     struct SheepWolf has drop, store, copy, key {
@@ -62,9 +66,96 @@ module woolf_deployer::traits {
         let trait_data: Table<u8, Table<u8, Trait>> = table::new();
         let alphas = vector[b"8", b"7", b"6", b"5"];
 
+        let rarities: vector<vector<u8>> = vector::empty();
+        let aliases: vector<vector<u8>> = vector::empty();
+        // I know this looks weird but it saves users gas by making lookup O(1)
+        // A.J. Walker's Alias Algorithm
+        // sheep
+        // fur
+        vector::push_back(&mut rarities, vector[15, 50, 200, 250, 255]);
+        vector::push_back(&mut aliases, vector[4, 4, 4, 4, 4]);
+        // head
+        vector::push_back(
+            &mut rarities,
+            vector[190, 215, 240, 100, 110, 135, 160, 185, 80, 210, 235, 240, 80, 80, 100, 100, 100, 245, 250, 255]
+        );
+        vector::push_back(&mut aliases, vector[1, 2, 4, 0, 5, 6, 7, 9, 0, 10, 11, 17, 0, 0, 0, 0, 4, 18, 19, 19]);
+        // ears
+        vector::push_back(&mut rarities, vector[255, 30, 60, 60, 150, 156]);
+        vector::push_back(&mut aliases, vector[0, 0, 0, 0, 0, 0]);
+        // eyes
+        vector::push_back(
+            &mut rarities,
+            vector[221, 100, 181, 140, 224, 147, 84, 228, 140, 224, 250, 160, 241, 207, 173, 84, 254, 220, 196, 140, 168, 252, 140, 183, 236, 252, 224, 255]
+        );
+        vector::push_back(
+            &mut aliases,
+            vector[1, 2, 5, 0, 1, 7, 1, 10, 5, 10, 11, 12, 13, 14, 16, 11, 17, 23, 13, 14, 17, 23, 23, 24, 27, 27, 27, 27]
+        );
+        // nose
+        vector::push_back(&mut rarities, vector[175, 100, 40, 250, 115, 100, 185, 175, 180, 255]);
+        vector::push_back(&mut aliases, vector[3, 0, 4, 6, 6, 7, 8, 8, 9, 9]);
+        // mouth
+        vector::push_back(
+            &mut rarities,
+            vector[80, 225, 227, 228, 112, 240, 64, 160, 167, 217, 171, 64, 240, 126, 80, 255]
+        );
+        vector::push_back(&mut aliases, vector[1, 2, 3, 8, 2, 8, 8, 9, 9, 10, 13, 10, 13, 15, 13, 15]);
+        // neck
+        vector::push_back(&mut rarities, vector[255]);
+        vector::push_back(&mut aliases, vector[0]);
+        // feet
+        vector::push_back(
+            &mut rarities,
+            vector[243, 189, 133, 133, 57, 95, 152, 135, 133, 57, 222, 168, 57, 57, 38, 114, 114, 114, 255]
+        );
+        vector::push_back(&mut aliases, vector[1, 7, 0, 0, 0, 0, 0, 10, 0, 0, 11, 18, 0, 0, 0, 1, 7, 11, 18]);
+        // alphaIndex
+        vector::push_back(&mut rarities, vector[255]);
+        vector::push_back(&mut aliases, vector[0]);
+
+        // wolves
+        // fur
+        vector::push_back(&mut rarities, vector[210, 90, 9, 9, 9, 150, 9, 255, 9]);
+        vector::push_back(&mut aliases, vector[5, 0, 0, 5, 5, 7, 5, 7, 5]);
+        // head
+        vector::push_back(&mut rarities, vector[255]);
+        vector::push_back(&mut aliases, vector[0]);
+        // ears
+        vector::push_back(&mut rarities, vector[255]);
+        vector::push_back(&mut aliases, vector[0]);
+        // eyes
+        vector::push_back(
+            &mut rarities,
+            vector[135, 177, 219, 141, 183, 225, 147, 189, 231, 135, 135, 135, 135, 246, 150, 150, 156, 165, 171, 180, 186, 195, 201, 210, 243, 252, 255]
+        );
+        vector::push_back(
+            &mut aliases,
+            vector[1, 2, 3, 4, 5, 6, 7, 8, 13, 3, 6, 14, 15, 16, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 26, 26]
+        );
+        // nose
+        vector::push_back(&mut rarities, vector[255]);
+        vector::push_back(&mut aliases, vector[0]);
+        // mouth
+        vector::push_back(&mut rarities, vector[239, 244, 249, 234, 234, 234, 234, 234, 234, 234, 130, 255, 247]);
+        vector::push_back(&mut aliases, vector[1, 2, 11, 0, 11, 11, 11, 11, 11, 11, 11, 11, 11]);
+        // neck
+        vector::push_back(&mut rarities, vector[75, 180, 165, 120, 60, 150, 105, 195, 45, 225, 75, 45, 195, 120, 255]);
+        vector::push_back(&mut aliases, vector[1, 9, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 14, 12, 14]);
+        // feet
+        vector::push_back(&mut rarities, vector[255]);
+        vector::push_back(&mut aliases, vector[0]);
+        // alphaIndex
+        vector::push_back(&mut rarities, vector[8, 160, 73, 255]);
+        vector::push_back(&mut aliases, vector[2, 3, 3, 3]);
+
         move_to(
             account,
-            Data { trait_types, trait_data, alphas, token_traits: table::new(), index_traits: table::new() }
+            Data {
+                trait_types, trait_data, alphas, token_traits: table::new(), index_traits: table::new(),
+                rarities,
+                aliases
+            }
         );
     }
 
@@ -211,6 +302,39 @@ module woolf_deployer::traits {
         (property_keys, property_values, property_types)
     }
 
+    public fun select_traits(): (bool, u8, u8, u8, u8, u8, u8, u8, u8, u8) acquires Data {
+        let t = select_traits_internal();
+        let SheepWolf { is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index } = t;
+
+        (is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index)
+    }
+
+    fun select_traits_internal(): SheepWolf acquires Data {
+        let data = borrow_global<Data>(@woolf_deployer);
+        let is_sheep = random::rand_u64_range_no_sender(0, 100) >= 10;
+        let shift = if (is_sheep) 0 else 9;
+        SheepWolf {
+            is_sheep,
+            fur: select_trait(data, random::rand_u64_range_no_sender(0, 255), 0 + shift),
+            head: select_trait(data, random::rand_u64_range_no_sender(0, 255), 1 + shift),
+            ears: select_trait(data, random::rand_u64_range_no_sender(0, 255), 2 + shift),
+            eyes: select_trait(data, random::rand_u64_range_no_sender(0, 255), 3 + shift),
+            nose: select_trait(data, random::rand_u64_range_no_sender(0, 255), 4 + shift),
+            mouth: select_trait(data, random::rand_u64_range_no_sender(0, 255), 5 + shift),
+            neck: select_trait(data, random::rand_u64_range_no_sender(0, 255), 6 + shift),
+            feet: select_trait(data, random::rand_u64_range_no_sender(0, 255), 7 + shift),
+            alpha_index: select_trait(data, random::rand_u64_range_no_sender(0, 255), 8 + shift),
+        }
+    }
+
+    fun select_trait(data: &Data, seed: u64, trait_type: u64): u8 {
+        let trait = seed % vector::length(vector::borrow(&data.rarities, trait_type));
+        if (seed < (*vector::borrow(vector::borrow(&data.rarities, trait_type), trait) as u64)) {
+            return (trait as u8)
+        };
+        *vector::borrow(vector::borrow(&data.aliases, trait_type), trait)
+    }
+
     #[test_only]
     use woolf_deployer::config;
     #[test_only]
@@ -218,7 +342,7 @@ module woolf_deployer::traits {
     #[test_only]
     use aptos_framework::account;
 
-    #[test( admin = @woolf_deployer, account = @0x1111)]
+    #[test(admin = @woolf_deployer, account = @0x1111)]
     fun test_update_token_traits(admin: &signer, account: &signer) acquires Data {
         account::create_account_for_test(signer::address_of(account));
         account::create_account_for_test(signer::address_of(admin));
@@ -236,7 +360,7 @@ module woolf_deployer::traits {
         // assert!(!table::contains(&data.token_traits, token_id), 1);
         // assert!(!table::contains(&data.index_traits, 1), 2);
 
-        update_token_traits(token_id, true, 1,1,1,1,1,1,1,1,1);
+        update_token_traits(token_id, true, 1, 1, 1, 1, 1, 1, 1, 1, 1);
         let data = borrow_global<Data>(@woolf_deployer);
         assert!(table::contains(&data.token_traits, token_id), 1);
         assert!(table::contains(&data.index_traits, 123), 2);
