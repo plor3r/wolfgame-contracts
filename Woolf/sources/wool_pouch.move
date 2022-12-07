@@ -17,6 +17,7 @@ module woolf_deployer::wool_pouch {
     use woolf_deployer::token_helper;
 
     friend woolf_deployer::woolf;
+    friend woolf_deployer::risky_game;
 
     //
     // Errors
@@ -209,7 +210,7 @@ module woolf_deployer::wool_pouch {
     }
 
     // FIXME fix public
-    public fun mint_internal(to: address, amount: u64, duration: u64) acquires Data {
+    public(friend) fun mint_internal(to: address, amount: u64, duration: u64) acquires Data {
         let data = borrow_global_mut<Data>(@woolf_deployer);
         assert!(amount >= START_VALUE, error::invalid_state(EINSUFFICIENT_POUCH));
         data.minted = data.minted + 1;

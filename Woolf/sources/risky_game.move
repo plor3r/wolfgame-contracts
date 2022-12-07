@@ -301,7 +301,6 @@ module woolf_deployer::risky_game {
         };
 
         if (!separate_pouches && earned > 0) {
-            // charge 20% tax
             wool_pouch::mint_internal(signer::address_of(player), earned, 365 * 4);
         };
         event::emit_event<WolfClaim>(
