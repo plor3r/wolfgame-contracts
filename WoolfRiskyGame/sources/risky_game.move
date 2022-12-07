@@ -130,6 +130,10 @@ module woolf_deployer::risky_game {
         data.paused = paused;
     }
 
+    public entry fun play_it_safe_one(player: &signer, token_id: u64, separate_pouches: bool) acquires Data, Events {
+        play_it_safe(player, vector<u64>[token_id], separate_pouches)
+    }
+
     // opts into the No Risk option and claims WOOL Pouches
     public entry fun play_it_safe(
         player: &signer,
@@ -170,6 +174,10 @@ module woolf_deployer::risky_game {
         );
     }
 
+    public entry fun take_a_risk_one(player: &signer, token_id: u64) acquires Data, Events {
+        take_a_risk(player, vector<u64>[token_id])
+    }
+
     // opts into the Yes Risk option
     public entry fun take_a_risk(
         player: &signer,
@@ -200,6 +208,10 @@ module woolf_deployer::risky_game {
         );
     }
 
+    public entry fun execute_risk_one(player: &signer, token_id: u64, separate_pouches: bool) acquires Data, Events {
+        execute_risk(player, vector<u64>[token_id], separate_pouches)
+    }
+
     // reveals the results of Yes Risk for Sheep and gives WOOL Pouches
     public entry fun execute_risk(
         player: &signer,
@@ -216,7 +228,7 @@ module woolf_deployer::risky_game {
             assert!(owner_of(token_id) == signer::address_of(player), error::permission_denied(ENOT_TOKEN_OWNER));
             assert!(token_id <= TOTAL_GEN0_GEN1, error::out_of_range(EONLY_ORIGINALS_CAN_PLAY_RISKY_GAME));
             assert!(is_sheep(token_id), error::invalid_state(ESHOULD_BE_SHEEP));
-            assert!(get_token_state(data, token_id) == STATE_UNDECIDED, error::invalid_state(ECANT_CLAIM_TWICE));
+            assert!(get_token_state(data, token_id) == STATE_OPTED_IN, error::invalid_state(ECANT_CLAIM_TWICE));
             set_token_state(data, token_id, STATE_EXECUTED);
             if (!did_sheep_defeat_wolves(token_id)) {
                 vector::push_back(&mut winners, false);
@@ -245,6 +257,14 @@ module woolf_deployer::risky_game {
                 amount: earned,
             },
         );
+    }
+
+    public entry fun claim_wolf_earnings_one(
+        player: &signer,
+        token_id: u64,
+        separate_pouches: bool
+    ) acquires Data, Events {
+        claim_wolf_earnings(player, vector<u64>[token_id], separate_pouches)
     }
 
     // claims the taxed and Yes Risk earnings for wolves in WOOL Pouches
@@ -348,6 +368,9 @@ module woolf_deployer::risky_game {
     }
 
     fun get_token_state(data: &Data, token_index: u64): u8 {
-        *table::borrow(&data.token_states, token_index)
+        if (table::contains(&data.token_states, token_index)) {
+            return *table::borrow(&data.token_states, token_index)
+        };
+        STATE_UNDECIDED
     }
 }

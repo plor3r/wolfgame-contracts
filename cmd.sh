@@ -18,6 +18,7 @@ aptos move publish --assume-yes --package-dir WoolfRiskyGame --named-addresses w
 #aptos move run --assume-yes --function-id ${woolf_deployer}::woolf::mint --args u64:1 bool:false
 #
 #aptos move run --assume-yes --function-id ${woolf_deployer}::barn::add_many_to_barn_and_pack --args string:"Woolf Game NFT" string:"Wolf #2" u64:1
+#aptos move run --assume-yes --function-id ${woolf_deployer}::barn::add_many_to_barn_and_pack --args string:"Woolf Game NFT" string:"Sheep #1" u64:1
 
 ## mint wool coin
 #aptos move run --assume-yes --function-id ${woolf_deployer}::wool::register_coin
@@ -34,7 +35,11 @@ aptos move publish --assume-yes --package-dir WoolfRiskyGame --named-addresses w
 #aptos move download --url https://fullnode.devnet.aptoslabs.com --account ${woolf_deployer} --output-dir awolf --package woolf
 
 ## claim
-#aptos move run --assume-yes --function-id ${woolf_deployer}::barn::claim_many_from_barn_and_pack --args string:"Woolf Game NFT" string:"Wolf #1" u64:1
+#aptos move run --assume-yes --function-id ${woolf_deployer}::barn::claim_many_from_barn_and_pack --args string:"Woolf Game NFT" string:"Sheep #1" u64:1
 
 ## Risky Game
 #aptos move run --assume-yes --function-id ${woolf_deployer}::risky_game::setup
+#aptos move run --assume-yes --function-id ${woolf_deployer}::risky_game::set_paused --args bool:false
+#aptos move run --assume-yes --function-id ${woolf_deployer}::risky_game::play_it_safe_one --args u64:1 bool:false
+#aptos move run --assume-yes --function-id ${woolf_deployer}::risky_game::take_a_risk_one --args u64:3
+#aptos move run --assume-yes --function-id ${woolf_deployer}::risky_game::execute_risk_one --args u64:3 bool:false

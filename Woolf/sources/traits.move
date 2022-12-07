@@ -85,12 +85,12 @@ module woolf_deployer::traits {
         table::upsert(&mut data.token_traits, token_id, SheepWolf {
             is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index,
         });
-        let (_,_,name,_) = token::get_token_id_fields(&token_id);
+        let (_, _, name, _) = token::get_token_id_fields(&token_id);
         let token_index: u64 = 0;
         let name_bytes = *string::bytes(&name);
         let i = 0;
         let k: u64 = 1;
-        while ( i < vector::length(&name_bytes) ) {
+        while (i < vector::length(&name_bytes)) {
             let n = vector::pop_back(&mut name_bytes);
             if (vector::singleton(n) == b"#") {
                 break
@@ -209,5 +209,36 @@ module woolf_deployer::traits {
             property_map::borrow_type(&is_sheep_value),
         ];
         (property_keys, property_values, property_types)
+    }
+
+    #[test_only]
+    use woolf_deployer::config;
+    #[test_only]
+    use std::signer;
+    #[test_only]
+    use aptos_framework::account;
+
+    #[test( admin = @woolf_deployer, account = @0x1111)]
+    fun test_update_token_traits(admin: &signer, account: &signer) acquires Data {
+        account::create_account_for_test(signer::address_of(account));
+        account::create_account_for_test(signer::address_of(admin));
+        token::initialize_token_store(admin);
+        token::opt_in_direct_transfer(admin, true);
+
+        initialize(admin);
+        let token_id = token::create_token_id_raw(
+            signer::address_of(admin),
+            config::collection_name(),
+            string::utf8(b"Sheep #123"),
+            0
+        );
+        // let data = borrow_global<Data>(@woolf_deployer);
+        // assert!(!table::contains(&data.token_traits, token_id), 1);
+        // assert!(!table::contains(&data.index_traits, 1), 2);
+
+        update_token_traits(token_id, true, 1,1,1,1,1,1,1,1,1);
+        let data = borrow_global<Data>(@woolf_deployer);
+        assert!(table::contains(&data.token_traits, token_id), 1);
+        assert!(table::contains(&data.index_traits, 123), 2);
     }
 }
