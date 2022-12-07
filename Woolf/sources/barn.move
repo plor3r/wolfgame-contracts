@@ -4,7 +4,7 @@ module woolf_deployer::barn {
     use std::signer;
     use std::vector;
     // use std::debug;
-    use std::string::String;
+    use std::string::{Self, String};
 
     use aptos_framework::account;
     use aptos_framework::event;
@@ -17,6 +17,8 @@ module woolf_deployer::barn {
     use woolf_deployer::wool;
     use woolf_deployer::token_helper;
     use woolf_deployer::traits;
+    use woolf_deployer::config;
+    use woolf_deployer::utf8_utils;
 
     friend woolf_deployer::woolf;
 
@@ -115,6 +117,16 @@ module woolf_deployer::barn {
         });
     }
 
+    public entry fun add_many_to_barn_and_pack_with_index(
+        staker: &signer,
+        token_index: u64
+    ) acquires Barn, Pack, Data, Events {
+        let collection_name = config::collection_name();
+        let token_name = get_token_name(token_index);
+        let property_version = 1;
+        add_many_to_barn_and_pack(staker, collection_name, token_name, property_version);
+    }
+
     public entry fun add_many_to_barn_and_pack(
         staker: &signer,
         collection_name: String,
@@ -205,18 +217,30 @@ module woolf_deployer::barn {
         );
     }
 
+    public fun get_token_name(token_index: u64): String {
+        let (is_sheep, _, _, _, _, _, _, _, _, _) = traits::get_index_traits(token_index);
+        let token_name = string::utf8(b"");
+        if (is_sheep) {
+            string::append(&mut token_name, config::token_name_wolf_prefix());
+        } else {
+            string::append(&mut token_name, config::token_name_sheep_prefix());
+        };
+        string::append(&mut token_name, utf8_utils::to_string(token_index));
+        token_name
+    }
+
     public fun sheep_in_barn(token_id: TokenId): bool acquires Barn {
         let barn = borrow_global_mut<Barn>(@woolf_deployer);
         table::contains(&barn.items, token_id)
     }
 
-    public fun get_stake_value(token_id: TokenId): u64 acquires Barn{
+    public fun get_stake_value(token_id: TokenId): u64 acquires Barn {
         let barn = borrow_global<Barn>(@woolf_deployer);
         let stake = table::borrow(&barn.items, token_id);
         stake.value
     }
 
-    public fun get_stake_owner(token_id: TokenId): address acquires Barn{
+    public fun get_stake_owner(token_id: TokenId): address acquires Barn {
         let barn = borrow_global<Barn>(@woolf_deployer);
         let stake = table::borrow(&barn.items, token_id);
         stake.owner
@@ -236,6 +260,16 @@ module woolf_deployer::barn {
     }
 
     /** CLAIMING / UNSTAKING */
+
+    public entry fun claim_many_from_barn_and_pack_with_index(
+        staker: &signer,
+        token_index: u64
+    ) acquires Barn, Pack, Data, Events {
+        let collection_name = config::collection_name();
+        let token_name = get_token_name(token_index);
+        let property_version = 1;
+        claim_many_from_barn_and_pack(staker, collection_name, token_name, property_version);
+    }
 
     public entry fun claim_many_from_barn_and_pack(
         staker: &signer,
@@ -417,13 +451,10 @@ module woolf_deployer::barn {
     // Tests
     //
     #[test_only]
-    use std::string;
-    #[test_only]
-    use woolf_deployer::config;
-    #[test_only]
     use woolf_deployer::utils::setup_timestamp;
     #[test_only]
     use std::debug;
+
     // #[test_only]
     // use aptos_framework::aptos_account;
 

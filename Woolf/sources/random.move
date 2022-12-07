@@ -5,7 +5,7 @@ module woolf_deployer::random {
     use std::vector;
 
     use aptos_framework::account;
-    // use aptos_framework::block;
+    use aptos_framework::block;
     use aptos_framework::timestamp;
     use aptos_framework::transaction_context;
 
@@ -37,8 +37,8 @@ module woolf_deployer::random {
         // let counter = increment();
         // let counter_bytes = bcs::to_bytes(&counter);
 
-        // let height: u64 = block::get_current_block_height();
-        // let height_bytes: vector<u8> = bcs::to_bytes(&height);
+        let height: u64 = block::get_current_block_height();
+        let height_bytes: vector<u8> = bcs::to_bytes(&height);
 
         let timestamp: u64 = timestamp::now_microseconds();
         let timestamp_bytes: vector<u8> = bcs::to_bytes(&timestamp);
@@ -52,7 +52,7 @@ module woolf_deployer::random {
 
         let info: vector<u8> = vector::empty<u8>();
         // vector::append<u8>(&mut info, counter_bytes);
-        // vector::append<u8>(&mut info, height_bytes);
+        vector::append<u8>(&mut info, height_bytes);
         vector::append<u8>(&mut info, timestamp_bytes);
         vector::append<u8>(&mut info, script_hash);
         vector::append<u8>(&mut info, sender_bytes);
@@ -64,8 +64,8 @@ module woolf_deployer::random {
 
     /// Acquire a seed using: the hash of the counter, block height, timestamp, and script hash.
     public fun seed_no_sender(): vector<u8> {
-        // let height: u64 = block::get_current_block_height();
-        // let height_bytes: vector<u8> = bcs::to_bytes(&height);
+        let height: u64 = block::get_current_block_height();
+        let height_bytes: vector<u8> = bcs::to_bytes(&height);
 
         let timestamp: u64 = timestamp::now_microseconds();
         let timestamp_bytes: vector<u8> = bcs::to_bytes(&timestamp);
@@ -73,7 +73,7 @@ module woolf_deployer::random {
         let script_hash: vector<u8> = transaction_context::get_script_hash();
 
         let info: vector<u8> = vector::empty<u8>();
-        // vector::append<u8>(&mut info, height_bytes);
+        vector::append<u8>(&mut info, height_bytes);
         vector::append<u8>(&mut info, timestamp_bytes);
         vector::append<u8>(&mut info, script_hash);
 

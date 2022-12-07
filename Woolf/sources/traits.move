@@ -200,6 +200,7 @@ module woolf_deployer::traits {
         token_index: u64
     ): (bool, u8, u8, u8, u8, u8, u8, u8, u8, u8) acquires Data {
         let data = borrow_global_mut<Data>(@woolf_deployer);
+        assert!(table::contains(&data.index_traits, token_index), error::not_found(ETOKEN_NOT_FOUND));
         let traits = table::borrow(&data.index_traits, token_index);
 
         let SheepWolf { is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index } = *traits;

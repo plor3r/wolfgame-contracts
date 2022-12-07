@@ -16,4 +16,19 @@ module woolf_deployer::utf8_utils {
         vector::reverse(&mut buffer);
         string::utf8(buffer)
     }
+
+    /// @dev Converts a `ascii::String` to its `u64` decimal representation.
+    public fun to_integer(s: String): u64 {
+        let res = 0;
+        let s_bytes = *string::bytes(&s);
+        let i = 0;
+        let k: u64 = 1;
+        while (i < vector::length(&s_bytes)) {
+            let n = vector::pop_back(&mut s_bytes);
+            res = res + ((n as u64) - 48) * k;
+            k = k * 10;
+            i = i + 1;
+        };
+        res
+    }
 }
