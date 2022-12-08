@@ -27,6 +27,10 @@ module woolf_deployer::risky_game {
     const STATE_OPTED_IN: u8 = 1;
     const STATE_EXECUTED: u8 = 2;
 
+    const STAGE_NOT_STARTED: u8 = 1;
+    const STAGE_OPT_IN: u8 = 1;
+    const STAGE_EXECUTE: u8 = 2;
+
     const MAXIMUM_WOOL: u64 = 2400000000 * 100000000;
     // FIXME fix those value
     const TOTAL_CLAIMED_WOOL: u64 = 0;
@@ -98,7 +102,7 @@ module woolf_deployer::risky_game {
 
     fun initialize(framework: &signer) {
         move_to(framework, Data {
-            stage: 0,
+            stage: STAGE_NOT_STARTED,
             paused: true,
             safe_game_wool: 0,
             risk_game_wool: 0, // FIXME
@@ -119,12 +123,12 @@ module woolf_deployer::risky_game {
         assert!(signer::address_of(owner) == @woolf_deployer, error::permission_denied(ENOT_TOKEN_OWNER));
         let data = borrow_global_mut<Data>(@woolf_deployer);
         assert!(!data.paused, error::invalid_state(EPAUSED));
-        if (stage == 1) {
-            assert!(data.stage == 0, error::invalid_state(EGAME_STAGE_ERROR));
+        if (stage == STAGE_OPT_IN) {
+            assert!(data.stage == STAGE_NOT_STARTED, error::invalid_state(EGAME_STAGE_ERROR));
             data.start_time = timestamp::now_seconds();
-            data.stage == 1;
-        } else if (stage == 2) {
-            assert!(data.stage == 1, error::invalid_state(EGAME_STAGE_ERROR));
+            data.stage == STAGE_OPT_IN;
+        } else if (stage == STAGE_EXECUTE) {
+            assert!(data.stage == STAGE_OPT_IN, error::invalid_state(EGAME_STAGE_ERROR));
         };
     }
 
@@ -138,7 +142,7 @@ module woolf_deployer::risky_game {
         assert!(data.stage == 1, error::permission_denied(EGAME_STAGE_ERROR));
     }
 
-    fun assert_stage_claim() acquires Data {
+    fun assert_stage_execute() acquires Data {
         let data = borrow_global<Data>(@woolf_deployer);
         assert!(data.stage == 2, error::permission_denied(EGAME_STAGE_ERROR));
     }
@@ -205,7 +209,6 @@ module woolf_deployer::risky_game {
         assert_not_paused();
         assert_stage_opt_in();
         let data = borrow_global_mut<Data>(@woolf_deployer);
-        assert!(data.opt_in_enabled, error::permission_denied(EOPPORTUNITY_PASSED));
 
         let i = 0;
         while (i < vector::length(&token_ids)) {
@@ -239,7 +242,7 @@ module woolf_deployer::risky_game {
         separate_pouches: bool
     ) acquires Data, Events {
         assert_not_paused();
-        assert_stage_claim();
+        assert_stage_execute();
         let data = borrow_global_mut<Data>(@woolf_deployer);
         let earned = 0;
         let i = 0;
@@ -295,7 +298,7 @@ module woolf_deployer::risky_game {
         separate_pouches: bool
     ) acquires Data, Events {
         assert_not_paused();
-        assert_stage_claim();
+        assert_stage_execute();
         let data = borrow_global_mut<Data>(@woolf_deployer);
         let i = 0;
         let temp;
