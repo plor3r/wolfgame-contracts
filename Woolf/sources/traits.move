@@ -2,6 +2,8 @@ module woolf_deployer::traits {
     use std::error;
     use std::string::{Self, String};
     use std::vector;
+    use std::bcs;
+    use std::hash;
     // use std::debug;
     use aptos_std::table::Table;
     use aptos_std::table;
@@ -35,6 +37,7 @@ module woolf_deployer::traits {
         index_traits: Table<u64, SheepWolf>,
         rarities: vector<vector<u8>>,
         aliases: vector<vector<u8>>,
+        existing_combinations: Table<vector<u8>, bool>,
     }
 
     struct SheepWolf has drop, store, copy, key {
@@ -154,7 +157,8 @@ module woolf_deployer::traits {
             Data {
                 trait_types, trait_data, alphas, token_traits: table::new(), index_traits: table::new(),
                 rarities,
-                aliases
+                aliases,
+                existing_combinations: table::new()
             }
         );
     }
@@ -303,11 +307,8 @@ module woolf_deployer::traits {
         (property_keys, property_values, property_types)
     }
 
-    public fun select_traits(): (bool, u8, u8, u8, u8, u8, u8, u8, u8, u8) acquires Data {
-        let t = select_traits_internal();
-        let SheepWolf { is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index } = t;
-
-        (is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index)
+    public fun select_traits(_seed: vector<u8>): SheepWolf acquires Data {
+        select_traits_internal()
     }
 
     fun select_traits_internal(): SheepWolf acquires Data {
@@ -336,12 +337,46 @@ module woolf_deployer::traits {
         *vector::borrow(vector::borrow(&data.aliases, trait_type), trait)
     }
 
+    // generates traits for a specific token, checking to make sure it's unique
+    public(friend) fun generate_traits(
+        seed: vector<u8>
+    ): (bool, u8, u8, u8, u8, u8, u8, u8, u8, u8) acquires Data {
+        let t = select_traits(seed);
+        let trait_hash = struct_to_hash(&t);
+        let dashboard = borrow_global_mut<Data>(@woolf_deployer);
+        if (!table::contains(&dashboard.existing_combinations, trait_hash)) {
+            table::add(&mut dashboard.existing_combinations, trait_hash, true);
+            let SheepWolf {
+                is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index
+            } = t;
+            return (is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index)
+        };
+        generate_traits(random::seed_no_sender())
+    }
+
+    fun struct_to_hash(s: &SheepWolf): vector<u8> {
+        let info: vector<u8> = vector::empty<u8>();
+        vector::append<u8>(&mut info, bcs::to_bytes(&s.is_sheep));
+        vector::append<u8>(&mut info, bcs::to_bytes(&s.fur));
+        vector::append<u8>(&mut info, bcs::to_bytes(&s.head));
+        vector::append<u8>(&mut info, bcs::to_bytes(&s.eyes));
+        vector::append<u8>(&mut info, bcs::to_bytes(&s.mouth));
+        vector::append<u8>(&mut info, bcs::to_bytes(&s.neck));
+        vector::append<u8>(&mut info, bcs::to_bytes(&s.ears));
+        vector::append<u8>(&mut info, bcs::to_bytes(&s.feet));
+        vector::append<u8>(&mut info, bcs::to_bytes(&s.alpha_index));
+        let hash: vector<u8> = hash::sha3_256(info);
+        hash
+    }
+
     #[test_only]
     use woolf_deployer::config;
     #[test_only]
     use std::signer;
     #[test_only]
     use aptos_framework::account;
+    #[test_only]
+    use woolf_deployer::utils::setup_timestamp;
 
     #[test(admin = @woolf_deployer, account = @0x1111)]
     fun test_update_token_traits(admin: &signer, account: &signer) acquires Data {
@@ -365,5 +400,37 @@ module woolf_deployer::traits {
         let data = borrow_global<Data>(@woolf_deployer);
         assert!(table::contains(&data.token_traits, token_id), 1);
         assert!(table::contains(&data.index_traits, 123), 2);
+    }
+
+    #[test(aptos = @0x1, admin = @woolf_deployer)]
+    fun test_select_traits(aptos: &signer, admin: &signer) acquires Data {
+        setup_timestamp(aptos);
+        // block::initialize_modules(aptos, 1);
+        initialize(admin);
+        select_traits(random::seed_no_sender());
+    }
+
+    #[test]
+    fun test_struct_to_hash() {
+        let sw = SheepWolf {
+            is_sheep: false,
+            fur: 1,
+            head: 1,
+            ears: 1,
+            eyes: 1,
+            nose: 1,
+            mouth: 1,
+            neck: 1,
+            feet: 1,
+            alpha_index: 1,
+        };
+        let hash = struct_to_hash(&sw);
+        // debug::print(&hash);
+        assert!(
+            hash == vector[221, 61, 243, 38, 36, 70, 50, 235, 234, 246, 152,
+                66, 26, 160, 62, 165, 60, 27, 51, 24, 219, 125, 95, 216, 122,
+                202, 224, 140, 185, 217, 181, 187],
+            1
+        );
     }
 }

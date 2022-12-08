@@ -1,24 +1,26 @@
 #!/bin/bash
 set -x
 
-woolf_deployer=0xc7f614122958b8e14651e4745c37f747fce08f030e222fbff0668c6c707f61b9
+woolf_deployer=0x27622855aa243666431d04dd9f944afac4f3c1a1d935714b2541bffde60785a3
 
 aptos account fund-with-faucet --account ${woolf_deployer}
 
 aptos move compile --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
-#aptos move compile --package-dir WoolfRiskyGame --named-addresses woolf_deployer=${woolf_deployer}
 
 aptos move test --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
-#aptos move test --package-dir WoolfRiskyGame --named-addresses woolf_deployer=${woolf_deployer}
 
 aptos move publish --assume-yes --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
-#aptos move publish --assume-yes --package-dir WoolfRiskyGame --named-addresses woolf_deployer=${woolf_deployer}
+
+#aptos move run --assume-yes --function-id ${woolf_deployer}::woolf::set_minting_enabled --args bool:true
 
 ## mint woolf nft
 #aptos move run --assume-yes --function-id ${woolf_deployer}::woolf::mint --args u64:1 bool:false
+#aptos move run --assume-yes --function-id ${woolf_deployer}::woolf::mint --args u64:1 bool:true
 #
 #aptos move run --assume-yes --function-id ${woolf_deployer}::barn::add_many_to_barn_and_pack --args string:"Woolf Game NFT" string:"Wolf #2" u64:1
 #aptos move run --assume-yes --function-id ${woolf_deployer}::barn::add_many_to_barn_and_pack --args string:"Woolf Game NFT" string:"Sheep #1" u64:1
+
+#aptos move run --assume-yes --function-id ${woolf_deployer}::barn::add_many_to_barn_and_pack_with_index --args u64:1
 
 ## mint wool coin
 #aptos move run --assume-yes --function-id ${woolf_deployer}::wool::register_coin
@@ -36,6 +38,7 @@ aptos move publish --assume-yes --package-dir Woolf --named-addresses woolf_depl
 
 ## claim
 #aptos move run --assume-yes --function-id ${woolf_deployer}::barn::claim_many_from_barn_and_pack --args string:"Woolf Game NFT" string:"Sheep #1" u64:1
+#aptos move run --assume-yes --function-id ${woolf_deployer}::barn::claim_many_from_barn_and_pack_with_index --args u64:1
 
 ## Risky Game
 #aptos move run --assume-yes --function-id ${woolf_deployer}::risky_game::setup

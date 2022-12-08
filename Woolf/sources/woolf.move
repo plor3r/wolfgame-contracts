@@ -4,8 +4,6 @@ module woolf_deployer::woolf {
     use std::string;
     use std::vector;
     use std::debug;
-    use std::bcs;
-    use std::hash;
 
     use aptos_framework::account;
     use aptos_framework::aptos_account;
@@ -13,7 +11,6 @@ module woolf_deployer::woolf {
     use aptos_framework::coin;
     use aptos_framework::event::EventHandle;
     // use aptos_framework::timestamp;
-    use aptos_std::table::{Self, Table};
     use aptos_token::token::{Self, TokenDataId, Token};
 
     use woolf_deployer::barn;
@@ -40,27 +37,14 @@ module woolf_deployer::woolf {
     // constants
     //
 
-    struct Chars has store {
-        // list of probabilities for each trait type
-        // 0 - 9 are associated with Sheep, 10 - 18 are associated with Wolves
-        rarities: vector<vector<u8>>,
-        // list of aliases for Walker's Alias algorithm
-        // 0 - 9 are associated with Sheep, 10 - 18 are associated with Wolves
-        aliases: vector<vector<u8>>,
-    }
-
     struct TokenMintingEvent has drop, store {
         token_receiver_address: address,
         token_data_id: TokenDataId,
     }
 
-    // This struct stores an NFT collection's relevant information
-    struct CollectionTokenMinter has key {
-        minting_enabled: bool,
+    struct Events has key {
         token_minting_events: EventHandle<TokenMintingEvent>,
     }
-
-    struct Woolf {}
 
     struct SheepWolf has drop, store, copy {
         is_sheep: bool,
@@ -75,8 +59,9 @@ module woolf_deployer::woolf {
         alpha_index: u8,
     }
 
-    struct Dashboard has key {
-        existing_combinations: Table<vector<u8>, bool>,
+    // This struct stores an NFT collection's relevant information
+    struct CollectionTokenMinting has key {
+        minting_enabled: bool,
     }
 
     fun init_module(admin: &signer) {
@@ -99,16 +84,24 @@ module woolf_deployer::woolf {
     }
 
     fun initialize(account: &signer) {
-        move_to(account, Dashboard {
-            existing_combinations: table::new()
+        move_to(account, CollectionTokenMinting {
+            minting_enabled: false,
         });
+        move_to(account, Events {
+            token_minting_events: account::new_event_handle<TokenMintingEvent>(account)
+        })
+    }
+
+    fun assert_enabled() acquires CollectionTokenMinting {
+        let minting = borrow_global<CollectionTokenMinting>(@woolf_deployer);
+        assert!(minting.minting_enabled, error::invalid_state(ENOT_ENABLED));
     }
 
     /// Set if minting is enabled for this collection token minter
-    public entry fun set_minting_enabled(minter: &signer, minting_enabled: bool) acquires CollectionTokenMinter {
+    public entry fun set_minting_enabled(minter: &signer, minting_enabled: bool) acquires CollectionTokenMinting {
         let minter_address = signer::address_of(minter);
         assert!(minter_address == @woolf_deployer, error::permission_denied(ENOT_AUTHORIZED));
-        let collection_token_minter = borrow_global_mut<CollectionTokenMinter>(minter_address);
+        let collection_token_minter = borrow_global_mut<CollectionTokenMinting>(minter_address);
         collection_token_minter.minting_enabled = minting_enabled;
     }
 
@@ -172,7 +165,8 @@ module woolf_deployer::woolf {
     }
 
     /// Mint an NFT to the receiver.
-    public entry fun mint(receiver: &signer, amount: u64, stake: bool) acquires Dashboard {
+    public entry fun mint(receiver: &signer, amount: u64, stake: bool) acquires CollectionTokenMinting {
+        assert_enabled();
         // NOTE: make receiver op-in in order to random select and directly transfer token to receiver
         token::initialize_token_store(receiver);
         token::opt_in_direct_transfer(receiver, true);
@@ -205,13 +199,10 @@ module woolf_deployer::woolf {
             let recipient: address = select_recipient(receiver_addr, seed, token_index);
             if (!stake || recipient != receiver_addr) {
                 debug::print(&111);
-                // FIXME send to thief
-                // token_helper::transfer_to(recipient, token_id);
 
                 token::direct_deposit_with_opt_in(recipient, token);
             } else {
                 debug::print(&222);
-                // token_helper::transfer_to(@woolf_deployer, token_id);
                 vector::push_back(&mut tokens, token);
             };
             // wool cost
@@ -227,10 +218,16 @@ module woolf_deployer::woolf {
 
         if (stake) {
             // FIXME who is the owner address???
-            // let creator_addr = token_helper::get_token_signer_address();
             barn::add_many_to_barn_and_pack_internal(receiver_addr, tokens);
         } else {
             vector::destroy_empty(tokens);
+        }
+    }
+
+    fun generate_traits(seed: vector<u8>): SheepWolf {
+        let (is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index) = traits::generate_traits(seed);
+        SheepWolf {
+            is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index
         }
     }
 
@@ -245,107 +242,33 @@ module woolf_deployer::woolf {
         return thief
     }
 
-    // generates traits for a specific token, checking to make sure it's unique
-    fun generate_traits(seed: vector<u8>): SheepWolf acquires Dashboard {
-        let t = select_traits(seed);
-        let trait_hash = struct_to_hash(&t);
-        let dashboard = borrow_global_mut<Dashboard>(@woolf_deployer);
-        if (!table::contains(&dashboard.existing_combinations, trait_hash)) {
-            table::add(&mut dashboard.existing_combinations, trait_hash, true);
-            return t
-        };
-        generate_traits(random::seed_no_sender())
-    }
-
-    fun struct_to_hash(s: &SheepWolf): vector<u8> {
-        let info: vector<u8> = vector::empty<u8>();
-        vector::append<u8>(&mut info, bcs::to_bytes(&s.is_sheep));
-        vector::append<u8>(&mut info, bcs::to_bytes(&s.fur));
-        vector::append<u8>(&mut info, bcs::to_bytes(&s.head));
-        vector::append<u8>(&mut info, bcs::to_bytes(&s.eyes));
-        vector::append<u8>(&mut info, bcs::to_bytes(&s.mouth));
-        vector::append<u8>(&mut info, bcs::to_bytes(&s.neck));
-        vector::append<u8>(&mut info, bcs::to_bytes(&s.ears));
-        vector::append<u8>(&mut info, bcs::to_bytes(&s.feet));
-        vector::append<u8>(&mut info, bcs::to_bytes(&s.alpha_index));
-        let hash: vector<u8> = hash::sha3_256(info);
-        hash
-    }
-
-    fun select_traits(_seed: vector<u8>): SheepWolf {
-        let (is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index) = traits::select_traits();
-        SheepWolf {
-            is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index
-        }
-    }
-
     //
     // test
     //
 
     // #[test_only]
     // use std::string;
-    // #[test_only]
-    // use aptos_framework::block;
+    #[test_only]
+    use aptos_framework::block;
     #[test_only]
     use woolf_deployer::utils::setup_timestamp;
 
-    // #[test(aptos = @0x1, account_addr = @woolf_deployer)]
-    // fun test_generate(aptos: &signer, account_addr: address) acquires Dashboard {
-    //     block::initialize_modules(aptos, 1);
-    //     let token_id = token::create_token_id_raw(
-    //         account_addr,
-    //         config::collection_name(),
-    //         string::utf8(b"123"),
-    //         0
-    //     );
-    //     generate(token_id, random::seed_no_sender());
-    // }
-
-    #[test(aptos = @0x1, admin = @woolf_deployer)]
-    fun test_select_traits(aptos: &signer, admin: &signer) {
-        setup_timestamp(aptos);
-        // block::initialize_modules(aptos, 1);
-        initialize(admin);
-        traits::initialize(admin);
-        select_traits(random::seed_no_sender());
-    }
-
-    #[test]
-    fun test_struct_to_hash() {
-        let sw = SheepWolf {
-            is_sheep: false,
-            fur: 1,
-            head: 1,
-            ears: 1,
-            eyes: 1,
-            nose: 1,
-            mouth: 1,
-            neck: 1,
-            feet: 1,
-            alpha_index: 1,
-        };
-        let hash = struct_to_hash(&sw);
-        // debug::print(&hash);
-        assert!(
-            hash == vector[221, 61, 243, 38, 36, 70, 50, 235, 234, 246, 152,
-                66, 26, 160, 62, 165, 60, 27, 51, 24, 219, 125, 95, 216, 122,
-                202, 224, 140, 185, 217, 181, 187],
-            1
-        );
-    }
-
     #[test(aptos = @0x1, admin = @woolf_deployer, account = @0x1234, fund_address = @woolf_deployer_fund)]
-    fun test_mint(aptos: &signer, admin: &signer, account: &signer, fund_address: &signer) acquires Dashboard {
+    fun test_mint(
+        aptos: &signer,
+        admin: &signer,
+        account: &signer,
+        fund_address: &signer
+    ) acquires CollectionTokenMinting {
         setup_timestamp(aptos);
-        // block::initialize_modules(aptos, 2);
+        block::initialize_for_test(aptos, 2);
         initialize_modules(admin);
 
         let account_addr = signer::address_of(account);
-
         account::create_account_for_test(account_addr);
-        // account::create_account_for_test(signer::address_of(admin));
+        account::create_account_for_test(signer::address_of(admin));
         account::create_account_for_test(signer::address_of(fund_address));
+        set_minting_enabled(account, true);
         wool::register_coin(account);
         wool::register_coin(admin);
         wool::register_coin(fund_address);
@@ -381,14 +304,16 @@ module woolf_deployer::woolf {
         admin: &signer,
         account: &signer,
         fund_address: &signer
-    ) acquires Dashboard {
+    ) acquires CollectionTokenMinting {
         setup_timestamp(aptos);
-        // block::initialize_modules(aptos, 2);
+        block::initialize_for_test(aptos, 2);
         initialize_modules(admin);
 
+
         account::create_account_for_test(signer::address_of(account));
-        // account::create_account_for_test(signer::address_of(admin));
+        account::create_account_for_test(signer::address_of(admin));
         account::create_account_for_test(signer::address_of(fund_address));
+        set_minting_enabled(admin, true);
         wool::register_coin(account);
         wool::register_coin(admin);
         wool::register_coin(fund_address);

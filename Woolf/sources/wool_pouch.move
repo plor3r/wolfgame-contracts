@@ -32,7 +32,7 @@ module woolf_deployer::wool_pouch {
     //
     // constants
     //
-    const START_VALUE: u64 = 10000 * 100000000;
+    const START_VALUE: u64 = 1 * 100000000;
     const SECONDS_PER_DAY: u64 = 86400;
 
     struct Pouch has store {
@@ -364,9 +364,9 @@ module woolf_deployer::wool_pouch {
     }
 
     fun get_name_property_map(token_id: u64): (vector<String>, vector<vector<u8>>, vector<String>) acquires Data {
-        let data = borrow_global_mut<Data>(@woolf_deployer);
+        let data = borrow_global<Data>(@woolf_deployer);
         assert!(table::contains(&data.pouches, token_id), error::not_found(EPOUCH_NOT_FOUND));
-        let pouch = table::borrow_mut(&mut data.pouches, token_id);
+        let pouch = table::borrow(&data.pouches, token_id);
 
         let duration = pouch.duration * SECONDS_PER_DAY;
         let end_time = pouch.start_timestamp + duration;

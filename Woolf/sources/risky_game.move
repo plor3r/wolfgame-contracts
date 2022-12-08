@@ -36,6 +36,7 @@ module woolf_deployer::risky_game {
 
     const MAX_ALPHA: u64 = 8;
     const ONE_DAY_IN_SECONDS: u64 = 86400;
+    const DAILY_WOOL: u64 = 10000 * 100000000;
 
     //
     // Errors
@@ -356,9 +357,9 @@ module woolf_deployer::risky_game {
         let token_id = get_token_id(token_index);
         if (barn::sheep_in_barn(token_id)) {
             let value = barn::get_stake_value(token_id);
-            return (timestamp::now_seconds() - value) * 10000 / ONE_DAY_IN_SECONDS
+            return (timestamp::now_seconds() - value) * DAILY_WOOL / ONE_DAY_IN_SECONDS
         } else {
-            return (timestamp::now_seconds() - data.start_time) * 10000 / ONE_DAY_IN_SECONDS
+            return (timestamp::now_seconds() - data.start_time) * DAILY_WOOL / ONE_DAY_IN_SECONDS
         }
     }
 

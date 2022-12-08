@@ -221,9 +221,9 @@ module woolf_deployer::barn {
         let (is_sheep, _, _, _, _, _, _, _, _, _) = traits::get_index_traits(token_index);
         let token_name = string::utf8(b"");
         if (is_sheep) {
-            string::append(&mut token_name, config::token_name_wolf_prefix());
-        } else {
             string::append(&mut token_name, config::token_name_sheep_prefix());
+        } else {
+            string::append(&mut token_name, config::token_name_wolf_prefix());
         };
         string::append(&mut token_name, utf8_utils::to_string(token_index));
         token_name
