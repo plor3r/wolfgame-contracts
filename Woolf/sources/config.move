@@ -31,7 +31,7 @@ module woolf_deployer::config {
     const COLLECTION_URI: vector<u8> = b"https://woolfgame.com";
 
     // FIXME
-    // const MINT_PRICE: u64 = 6942000000; // 69.42 APT
+    // const MINT_PRICE: u64 = 694200000; // 6.942 APT
     const MAX_TOKENS: u64 = 50000;
     const PAID_TOKENS: u64 = 10000;
     const MAX_SINGLE_MINT: u64 = 10;

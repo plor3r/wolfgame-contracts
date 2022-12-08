@@ -49,6 +49,7 @@ module woolf_deployer::risky_game {
     const ESHOULD_BE_SHEEP: u64 = 6;
     const ENOT_TOKEN_OWNER: u64 = 7;
     const ENOT_IN_BARN: u64 = 8;
+    const EGAME_STAGE_ERROR: u64 = 9;
 
     struct SafeClaim has store, drop {
         recipient: address,
@@ -82,7 +83,7 @@ module woolf_deployer::risky_game {
     }
 
     struct Data has key {
-        opt_in_enabled: bool,
+        stage: u8, // game stage, 0 -> not started, 1 -> opt in, 2-> claim
         paused: bool,
         safe_game_wool: u64,
         risk_game_wool: u64,
@@ -97,7 +98,7 @@ module woolf_deployer::risky_game {
 
     fun initialize(framework: &signer) {
         move_to(framework, Data {
-            opt_in_enabled: true,
+            stage: 0,
             paused: true,
             safe_game_wool: 0,
             risk_game_wool: 0, // FIXME
@@ -114,16 +115,32 @@ module woolf_deployer::risky_game {
         })
     }
 
-    public entry fun setup(owner: &signer) acquires Data {
+    public entry fun set_stage(owner: &signer, stage: u8) acquires Data {
         assert!(signer::address_of(owner) == @woolf_deployer, error::permission_denied(ENOT_TOKEN_OWNER));
         let data = borrow_global_mut<Data>(@woolf_deployer);
-        data.start_time = timestamp::now_seconds();
+        assert!(!data.paused, error::invalid_state(EPAUSED));
+        if (stage == 1) {
+            assert!(data.stage == 0, error::invalid_state(EGAME_STAGE_ERROR));
+            data.start_time = timestamp::now_seconds();
+            data.stage == 1;
+        } else if (stage == 2) {
+            assert!(data.stage == 1, error::invalid_state(EGAME_STAGE_ERROR));
+        };
     }
 
     fun assert_not_paused() acquires Data {
         let data = borrow_global<Data>(@woolf_deployer);
         assert!(data.paused == false, error::permission_denied(EPAUSED));
-        assert!(data.start_time > 0, error::invalid_state(EPAUSED));
+    }
+
+    fun assert_stage_opt_in() acquires Data {
+        let data = borrow_global<Data>(@woolf_deployer);
+        assert!(data.stage == 1, error::permission_denied(EGAME_STAGE_ERROR));
+    }
+
+    fun assert_stage_claim() acquires Data {
+        let data = borrow_global<Data>(@woolf_deployer);
+        assert!(data.stage == 2, error::permission_denied(EGAME_STAGE_ERROR));
     }
 
     public entry fun set_paused(paused: bool) acquires Data {
@@ -142,6 +159,7 @@ module woolf_deployer::risky_game {
         separate_pouches: bool
     ) acquires Data, Events {
         assert_not_paused();
+        assert_stage_opt_in();
         let earned: u64 = 0;
         let i = 0;
         let temp: u64;
@@ -185,6 +203,7 @@ module woolf_deployer::risky_game {
         token_ids: vector<u64>
     ) acquires Data, Events {
         assert_not_paused();
+        assert_stage_opt_in();
         let data = borrow_global_mut<Data>(@woolf_deployer);
         assert!(data.opt_in_enabled, error::permission_denied(EOPPORTUNITY_PASSED));
 
@@ -220,6 +239,7 @@ module woolf_deployer::risky_game {
         separate_pouches: bool
     ) acquires Data, Events {
         assert_not_paused();
+        assert_stage_claim();
         let data = borrow_global_mut<Data>(@woolf_deployer);
         let earned = 0;
         let i = 0;
@@ -231,7 +251,7 @@ module woolf_deployer::risky_game {
             assert!(is_sheep(token_id), error::invalid_state(ESHOULD_BE_SHEEP));
             assert!(get_token_state(data, token_id) == STATE_OPTED_IN, error::invalid_state(ECANT_CLAIM_TWICE));
             set_token_state(data, token_id, STATE_EXECUTED);
-            if (!did_sheep_defeat_wolves(token_id)) {
+            if (!did_sheep_defeat_wolves(&signer::address_of(player), token_id)) {
                 vector::push_back(&mut winners, false);
                 continue
             };
@@ -275,6 +295,7 @@ module woolf_deployer::risky_game {
         separate_pouches: bool
     ) acquires Data, Events {
         assert_not_paused();
+        assert_stage_claim();
         let data = borrow_global_mut<Data>(@woolf_deployer);
         let i = 0;
         let temp;
@@ -341,9 +362,9 @@ module woolf_deployer::risky_game {
         sheep
     }
 
-    fun did_sheep_defeat_wolves(_token_index: u64): bool {
+    fun did_sheep_defeat_wolves(player: &address, _token_index: u64): bool {
         // 50/50
-        random::rand_u64_range_no_sender(0, 2) == 0
+        random::rand_u64_range(player, 0, 2) == 0
     }
 
     fun alphaForWolf(token_index: u64): u8 {

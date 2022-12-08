@@ -12,8 +12,7 @@
 - [x] Set NFT standard format
 - [x] Barn: Stake
 - [x] Barn: Unstake
-- [ ] fix bugs
-
+- [x] risky game
 
 ## Current site
 - Ethereum
@@ -21,3 +20,10 @@
 - BSC
   - https://wolfgame.io/
   - https://wolfbsc.games/
+
+## NEED
+
+1. token uri generate for sheep, wolf and pouches
+2. set mint and risky game starting point
+3. check permission
+4. UI
