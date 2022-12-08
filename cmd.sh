@@ -1,7 +1,7 @@
 #!/bin/bash
 set -x
 
-woolf_deployer=0x27622855aa243666431d04dd9f944afac4f3c1a1d935714b2541bffde60785a3
+woolf_deployer=0x466c6bdc1fee6dd2274a78fffb34b92d4a2ae08c6a01c1ad3995f3147f40ae67
 
 aptos account fund-with-faucet --account ${woolf_deployer}
 

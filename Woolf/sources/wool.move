@@ -40,7 +40,6 @@ module woolf_deployer::wool {
         to: address, amount: u64
     ) acquires Caps {
         let account_addr = @woolf_deployer;
-
         assert!(
             has_capability(account_addr),
             error::not_found(ENO_CAPABILITIES),
@@ -75,12 +74,7 @@ module woolf_deployer::wool {
         account: &signer,
         amount: u64,
     ) acquires Caps {
-        let account_addr = signer::address_of(account);
-        assert!(
-            has_capability(account_addr),
-            error::not_found(ENO_CAPABILITIES),
-        );
-        let burn_cap = &borrow_global<Caps>(account_addr).burn;
+        let burn_cap = &borrow_global<Caps>(@woolf_deployer).burn;
         let to_burn = coin::withdraw<Wool>(account, amount);
         coin::burn(to_burn, burn_cap);
     }

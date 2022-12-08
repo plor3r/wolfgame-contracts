@@ -3,7 +3,6 @@ module woolf_deployer::woolf {
     use std::signer;
     use std::string;
     use std::vector;
-    use std::debug;
 
     use aptos_framework::account;
     use aptos_framework::aptos_account;
@@ -181,7 +180,6 @@ module woolf_deployer::woolf {
         if (token_supply < config::paid_tokens()) {
             assert!(token_supply + amount <= config::paid_tokens(), error::out_of_range(EALL_MINTED));
             let price = config::mint_price() * amount;
-            // FIXME
             coin::transfer<AptosCoin>(receiver, config::fund_destination_address(), price);
         };
 
@@ -198,26 +196,22 @@ module woolf_deployer::woolf {
             // debug::print(&token_id);
             let recipient: address = select_recipient(receiver_addr, seed, token_index);
             if (!stake || recipient != receiver_addr) {
-                debug::print(&111);
-
                 token::direct_deposit_with_opt_in(recipient, token);
             } else {
-                debug::print(&222);
                 vector::push_back(&mut tokens, token);
             };
             // wool cost
             total_wool_cost = total_wool_cost + mint_cost(token_index);
-
             i = i + 1;
         };
         if (total_wool_cost > 0) {
             // burn WOOL
-            // FIXME need burn cap
-            wool::transfer(receiver, @woolf_deployer, total_wool_cost);
+            wool::register_coin(receiver);
+            wool::burn(receiver, total_wool_cost);
+            // wool::transfer(receiver, @woolf_deployer, total_wool_cost);
         };
 
         if (stake) {
-            // FIXME who is the owner address???
             barn::add_many_to_barn_and_pack_internal(receiver_addr, tokens);
         } else {
             vector::destroy_empty(tokens);
@@ -246,8 +240,8 @@ module woolf_deployer::woolf {
     // test
     //
 
-    // #[test_only]
-    // use std::string;
+    #[test_only]
+    use std::debug;
     #[test_only]
     use aptos_framework::block;
     #[test_only]
