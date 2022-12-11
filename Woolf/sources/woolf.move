@@ -31,6 +31,8 @@ module woolf_deployer::woolf {
     const EALL_MINTED: u64 = 4;
     /// Invalid minting
     const EINVALID_MINTING: u64 = 5;
+    /// INSUFFICIENT APTOS BALANCE
+    const EINSUFFICIENT_APT_BALANCE: u64 = 6;
 
     //
     // constants
@@ -179,6 +181,7 @@ module woolf_deployer::woolf {
         if (token_supply < config::paid_tokens()) {
             assert!(token_supply + amount <= config::paid_tokens(), error::out_of_range(EALL_MINTED));
             let price = config::mint_price() * amount;
+            assert!(coin::balance<AptosCoin>(receiver_addr) >= price, error::invalid_state(EINSUFFICIENT_APT_BALANCE));
             coin::transfer<AptosCoin>(receiver, config::fund_destination_address(), price);
         };
 
