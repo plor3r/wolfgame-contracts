@@ -31,8 +31,9 @@ module woolf_deployer::woolf {
     const EALL_MINTED: u64 = 4;
     /// Invalid minting
     const EINVALID_MINTING: u64 = 5;
-    /// INSUFFICIENT APTOS BALANCE
+    /// INSUFFICIENT BALANCE
     const EINSUFFICIENT_APT_BALANCE: u64 = 6;
+    const EINSUFFICIENT_WOOL_BALANCE: u64 = 7;
 
     //
     // constants
@@ -209,6 +210,7 @@ module woolf_deployer::woolf {
         if (total_wool_cost > 0) {
             // burn WOOL
             wool::register_coin(receiver);
+            assert!(coin::balance<wool::Wool>(receiver_addr) >= total_wool_cost, error::invalid_state(EINSUFFICIENT_WOOL_BALANCE));
             wool::burn(receiver, total_wool_cost);
             // wool::transfer(receiver, @woolf_deployer, total_wool_cost);
         };
