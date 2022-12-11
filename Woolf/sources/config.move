@@ -38,8 +38,8 @@ module woolf_deployer::config {
 
     // testing config
     const MINT_PRICE: u64 = 100000000;
-    const MAX_TOKENS: u64 = 10;
-    const PAID_TOKENS: u64 = 2;
+    const MAX_TOKENS: u64 = 20;
+    const PAID_TOKENS: u64 = 10;
 
 
     //

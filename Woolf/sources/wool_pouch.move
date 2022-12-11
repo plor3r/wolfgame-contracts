@@ -28,6 +28,7 @@ module woolf_deployer::wool_pouch {
     const EPAUSED: u64 = 4;
     const EPOUCH_NOT_FOUND: u64 = 5;
     const ENO_MORE_EARNINGS_AVAILABLE: u64 = 6;
+    const ENOT_ADMIN: u64 = 7;
 
     //
     // constants
@@ -107,7 +108,8 @@ module woolf_deployer::wool_pouch {
         assert!(token::balance_of(owner, token_id) == 1, ENOT_OWNER);
     }
 
-    public entry fun set_paused(paused: bool) acquires Data {
+    public entry fun set_paused(admin: &signer, paused: bool) acquires Data {
+        assert!(signer::address_of(admin) == @woolf_deployer, error::permission_denied(ENOT_ADMIN));
         let data = borrow_global_mut<Data>(@woolf_deployer);
         data.paused = paused;
     }
@@ -238,14 +240,14 @@ module woolf_deployer::wool_pouch {
 
     // enables an address to mint
     public entry fun add_controller(owner: &signer, controller: address) acquires Data {
-        assert!(signer::address_of(owner) == @woolf_deployer, error::permission_denied(ENOT_OWNER));
+        assert!(signer::address_of(owner) == @woolf_deployer, error::permission_denied(ENOT_ADMIN));
         let data = borrow_global_mut<Data>(@woolf_deployer);
         table::upsert(&mut data.controllers, controller, true);
     }
 
     // disables an address from minting
     public entry fun remove_controller(owner: &signer, controller: address) acquires Data {
-        assert!(signer::address_of(owner) == @woolf_deployer, error::permission_denied(ENOT_OWNER));
+        assert!(signer::address_of(owner) == @woolf_deployer, error::permission_denied(ENOT_ADMIN));
         let data = borrow_global_mut<Data>(@woolf_deployer);
         table::upsert(&mut data.controllers, controller, false);
     }

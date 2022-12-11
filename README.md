@@ -24,6 +24,6 @@
 ## NEED
 
 1. token uri generate for sheep, wolf and pouches
-2. set mint and risky game starting point
+2. [x] set mint and risky game starting point
 3. check permission
 4. UI

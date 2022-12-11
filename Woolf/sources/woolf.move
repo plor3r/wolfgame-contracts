@@ -97,10 +97,9 @@ module woolf_deployer::woolf {
     }
 
     /// Set if minting is enabled for this collection token minter
-    public entry fun set_minting_enabled(minter: &signer, minting_enabled: bool) acquires CollectionTokenMinting {
-        let minter_address = signer::address_of(minter);
-        assert!(minter_address == @woolf_deployer, error::permission_denied(ENOT_AUTHORIZED));
-        let collection_token_minter = borrow_global_mut<CollectionTokenMinting>(minter_address);
+    public entry fun set_minting_enabled(admin: &signer, minting_enabled: bool) acquires CollectionTokenMinting {
+        assert!(signer::address_of(admin) == @woolf_deployer, error::permission_denied(ENOT_AUTHORIZED));
+        let collection_token_minter = borrow_global_mut<CollectionTokenMinting>(@woolf_deployer);
         collection_token_minter.minting_enabled = minting_enabled;
     }
 

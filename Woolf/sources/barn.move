@@ -29,7 +29,7 @@ module woolf_deployer::barn {
     // sheep must have 2 days worth of $WOOL to unstake or else it's too cold
 
     // FIXME const MINIMUM_TO_EXIT: u64 = 2 * 86400;
-    const MINIMUM_TO_EXIT: u64 = 60;
+    const MINIMUM_TO_EXIT: u64 = 600;
     const ONE_DAY_IN_SECOND: u64 = 86400;
     // wolves take a 20% tax on all $WOOL claimed
     const WOOL_CLAIM_TAX_PERCENTAGE: u64 = 20;
@@ -449,9 +449,6 @@ module woolf_deployer::barn {
         };
         @0x0
     }
-
-    public fun assert_unpaused() {}
-
 
     //
     // Tests

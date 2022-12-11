@@ -149,7 +149,8 @@ module woolf_deployer::risky_game {
         assert!(data.stage == 2, error::permission_denied(EGAME_STAGE_ERROR));
     }
 
-    public entry fun set_paused(paused: bool) acquires Data {
+    public entry fun set_paused(admin: &signer, paused: bool) acquires Data {
+        assert!(signer::address_of(admin) == @woolf_deployer, error::permission_denied(ENOT_TOKEN_OWNER));
         let data = borrow_global_mut<Data>(@woolf_deployer);
         data.paused = paused;
     }
