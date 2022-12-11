@@ -33,7 +33,7 @@ module woolf_deployer::wool_pouch {
     // constants
     //
     const START_VALUE: u64 = 1 * 100000000;
-    const SECONDS_PER_DAY: u64 = 86400;
+    const ONE_DAY_IN_SECONDS: u64 = 86400;
 
     struct Pouch has store {
         // whether or not first 10,000 WOOL has been claimed
@@ -173,12 +173,12 @@ module woolf_deployer::wool_pouch {
         assert!(table::contains(&data.pouches, token_id), error::not_found(EPOUCH_NOT_FOUND));
         let pouch = table::borrow_mut(&mut data.pouches, token_id);
         let current_timestamp = timestamp::now_seconds();
-        if (current_timestamp > pouch.start_timestamp + pouch.duration * SECONDS_PER_DAY) {
-            current_timestamp = pouch.start_timestamp + pouch.duration * SECONDS_PER_DAY;
+        if (current_timestamp > pouch.start_timestamp + pouch.duration * ONE_DAY_IN_SECONDS) {
+            current_timestamp = pouch.start_timestamp + pouch.duration * ONE_DAY_IN_SECONDS;
         };
         if (pouch.last_claim_timestamp > current_timestamp) { return 0 };
         let elapsed = current_timestamp - pouch.last_claim_timestamp;
-        elapsed * pouch.amount / (pouch.duration * SECONDS_PER_DAY) + if (pouch.initial_claimed) 0 else START_VALUE
+        elapsed * pouch.amount / (pouch.duration * ONE_DAY_IN_SECONDS) + if (pouch.initial_claimed) 0 else START_VALUE
     }
 
     //
@@ -368,14 +368,14 @@ module woolf_deployer::wool_pouch {
         assert!(table::contains(&data.pouches, token_id), error::not_found(EPOUCH_NOT_FOUND));
         let pouch = table::borrow(&data.pouches, token_id);
 
-        let duration = pouch.duration * SECONDS_PER_DAY;
+        let duration = pouch.duration * ONE_DAY_IN_SECONDS;
         let end_time = pouch.start_timestamp + duration;
         let locked = 0;
         let days_remaining = 0;
         let timenow = timestamp::now_seconds();
         if (end_time > timenow) {
             locked = (end_time - timenow) * pouch.amount / duration;
-            days_remaining = (end_time - timenow) / SECONDS_PER_DAY;
+            days_remaining = (end_time - timenow) / ONE_DAY_IN_SECONDS;
         };
 
         let duration_value = property_map::create_property_value(&duration);

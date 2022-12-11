@@ -31,12 +31,12 @@ module woolf_deployer::risky_game {
     const STAGE_OPT_IN: u8 = 1;
     const STAGE_EXECUTE: u8 = 2;
 
-    const MAXIMUM_WOOL: u64 = 2400000000 * 100000000;
+    // Total wool in risky game, 10 billin
+    const MAXIMUM_WOOL: u64 = 1000000000 * 100000000;
     // FIXME fix those value
     const TOTAL_CLAIMED_WOOL: u64 = 0;
     const TOTAL_STAKED_EARNINGS: u64 = 0;
     const TOTAL_UNSTAKED_EARNINGS: u64 = 0;
-    const TOTAL_ALPHA: u64 = 9901;
 
     const MAX_ALPHA: u64 = 8;
     const ONE_DAY_IN_SECONDS: u64 = 86400;
@@ -91,6 +91,7 @@ module woolf_deployer::risky_game {
         paused: bool,
         safe_game_wool: u64,
         risk_game_wool: u64,
+        taxes: u64,
         total_risk_takers: u64,
         token_states: Table<u64, u8>,
         start_time: u64,
@@ -105,7 +106,8 @@ module woolf_deployer::risky_game {
             stage: STAGE_NOT_STARTED,
             paused: true,
             safe_game_wool: 0,
-            risk_game_wool: 0, // FIXME
+            risk_game_wool: MAXIMUM_WOOL, // FIXME
+            taxes: 0,
             total_risk_takers: 0,
             token_states: table::new(),
             start_time: 0,
@@ -185,6 +187,7 @@ module woolf_deployer::risky_game {
         };
 
         data.safe_game_wool = data.safe_game_wool + earned;
+        data.taxes = data.taxes + earned / 5;
         if (!separate_pouches) {
             // charge 20% tax
             wool_pouch::mint_internal(signer::address_of(player), earned * 4 / 5, 365 * 4);
@@ -305,9 +308,8 @@ module woolf_deployer::risky_game {
         let earned = 0;
         let alpha: u64;
         // amount in taxes is 20% of remainder after unclaimed wool from v1 and risk game
-        let taxes = (MAXIMUM_WOOL - data.risk_game_wool - TOTAL_CLAIMED_WOOL) / 5;
         // if there are no sheep playing risk game, wolves win the whole pot
-        let total_wolf_earnings = taxes + data.risk_game_wool / (if (data.total_risk_takers > 0) 2 else 1);
+        let total_wolf_earnings = data.taxes + data.risk_game_wool / (if (data.total_risk_takers > 0) 2 else 1);
         while (i < vector::length(&token_ids)) {
             let token_id = *vector::borrow(&token_ids, i);
             assert!(owner_of(token_id) == signer::address_of(player), error::permission_denied(ENOT_TOKEN_OWNER));
@@ -317,7 +319,7 @@ module woolf_deployer::risky_game {
 
             set_token_state(data, token_id, STATE_EXECUTED);
             alpha = (alphaForWolf(token_id) as u64);
-            temp = total_wolf_earnings * alpha / TOTAL_ALPHA;
+            temp = total_wolf_earnings * alpha / barn::total_alpha();
             earned = earned + temp;
             if (separate_pouches) {
                 wool_pouch::mint_internal(signer::address_of(player), temp, 365 * 4);
@@ -377,12 +379,13 @@ module woolf_deployer::risky_game {
 
     // gets the WOOL due for a Sheep based on their state before Barn v1 was paused
     fun get_wool_due(data: &mut Data, token_index: u64): u64 {
-        // let data = borrow_global<Data>(@woolf_deployer);
         let token_id = get_token_id(token_index);
         if (barn::sheep_in_barn(token_id)) {
+            // Sheep that were staked earn all their earnings up until the risky game
             let value = barn::get_stake_value(token_id);
-            return (timestamp::now_seconds() - value) * DAILY_WOOL / ONE_DAY_IN_SECONDS
+            return (data.start_time - value) * DAILY_WOOL / ONE_DAY_IN_SECONDS
         } else {
+            // Sheep that were not staked receive what they would have earned between the pause and migration
             return (timestamp::now_seconds() - data.start_time) * DAILY_WOOL / ONE_DAY_IN_SECONDS
         }
     }

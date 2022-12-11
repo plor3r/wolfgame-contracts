@@ -2,6 +2,7 @@ module woolf_deployer::wool {
     use std::string;
     use std::error;
     use std::signer;
+    use std::option;
     use aptos_framework::coin::{Self, MintCapability, BurnCapability};
 
     friend woolf_deployer::woolf;
@@ -28,6 +29,15 @@ module woolf_deployer::wool {
 
     fun has_capability(account_addr: address): bool {
         exists<Caps>(account_addr)
+    }
+
+    public fun total_supply(): u128 {
+        let maybe_supply = &coin::supply<Wool>();
+        let supply: u128 = 0;
+        if (option::is_some(maybe_supply)) {
+            supply = *option::borrow(maybe_supply);
+        };
+        supply
     }
 
     public entry fun register_coin(account: &signer) {

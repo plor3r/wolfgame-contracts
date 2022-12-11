@@ -33,8 +33,8 @@ module woolf_deployer::barn {
     const ONE_DAY_IN_SECOND: u64 = 86400;
     // wolves take a 20% tax on all $WOOL claimed
     const WOOL_CLAIM_TAX_PERCENTAGE: u64 = 20;
-    // there will only ever be (roughly) 2.4 billion $WOOL earned through staking
-    const MAXIMUM_GLOBAL_WOOL: u64 = 2400000000 * 100000000;
+    // there will only ever be (roughly) 1.4 billion $WOOL earned through staking
+    const MAXIMUM_GLOBAL_WOOL: u64 = 1400000000 * 100000000;
 
     //
     // Errors
@@ -165,7 +165,7 @@ module woolf_deployer::barn {
         let stake = Stake {
             token,
             value: timestamp::now_seconds(),
-            owner: owner,
+            owner,
         };
         let data = borrow_global_mut<Data>(@woolf_deployer);
         data.total_sheep_staked = data.total_sheep_staked + 1;
@@ -193,7 +193,7 @@ module woolf_deployer::barn {
         let stake = Stake {
             token,
             value: data.wool_per_alpha,
-            owner: owner,
+            owner,
         };
 
         // Add the wolf to the Pack
@@ -399,6 +399,11 @@ module woolf_deployer::barn {
 
     /** ACCOUNTING */
 
+    public fun total_alpha(): u64 acquires Data{
+        let data = borrow_global<Data>(@woolf_deployer);
+        data.total_alpha_staked
+    }
+
     public fun max_alpha(): u8 {
         MAX_ALPHA
     }
@@ -408,7 +413,7 @@ module woolf_deployer::barn {
         MAX_ALPHA - alpha_index // alpha index is 0-3
     }
 
-    // tracks $WOOL earnings to ensure it stops once 2.4 billion is eclipsed
+    // tracks $WOOL earnings to ensure it stops once 1.4 billion is eclipsed
     fun update_earnings() acquires Data {
         let data = borrow_global_mut<Data>(@woolf_deployer);
         if (data.total_wool_earned < MAXIMUM_GLOBAL_WOOL) {
@@ -420,7 +425,7 @@ module woolf_deployer::barn {
     }
 
     // chooses a random Wolf thief when a newly minted token is stolen
-    public(friend) fun random_wolf_owner(seed: vector<u8>): address acquires Pack, Data {
+    public fun random_wolf_owner(seed: vector<u8>): address acquires Pack, Data {
         let pack = borrow_global<Pack>(@woolf_deployer);
         let data = borrow_global<Data>(@woolf_deployer);
         if (data.total_alpha_staked == 0) {
@@ -446,6 +451,7 @@ module woolf_deployer::barn {
     }
 
     public fun assert_unpaused() {}
+
 
     //
     // Tests
