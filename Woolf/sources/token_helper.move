@@ -28,6 +28,10 @@ module woolf_deployer::token_helper {
         capability: SignerCapability,
     }
 
+    struct Data has key {
+        collection_supply: u64
+    }
+
     public fun get_token_signer_address(): address acquires CollectionCapability {
         account::get_signer_capability_address(&borrow_global<CollectionCapability>(@woolf_deployer).capability)
     }
@@ -52,6 +56,10 @@ module woolf_deployer::token_helper {
 
         move_to(framework, CollectionCapability {
             capability: token_signer_cap,
+        });
+
+        move_to(framework, Data {
+            collection_supply: 0
         });
         // Set up NFT collection
         let maximum_supply = config::max_tokens();
@@ -99,7 +107,7 @@ module woolf_deployer::token_helper {
         token::check_tokendata_exists(creator, collection_name, token_name)
     }
 
-    public(friend) fun collection_supply(): u64 acquires CollectionCapability {
+    public entry fun collection_supply(): u64 acquires CollectionCapability {
         let token_resource_address = get_token_signer_address();
         let supply = token::get_collection_supply(token_resource_address, config::collection_name());
         if (option::is_some<u64>(&supply)) {
@@ -136,8 +144,7 @@ module woolf_deployer::token_helper {
 
         let nft_maximum: u64 = 1;
         let description = config::tokendata_description();
-        let token_uri: string::String = config::tokendata_url_prefix();
-        string::append(&mut token_uri, token_name);
+        let token_uri = string::utf8(b"");
         let royalty_payee_address: address = @woolf_deployer;
         let royalty_points_denominator: u64 = 100;
         let royalty_points_numerator: u64 = 0;
@@ -171,14 +178,21 @@ module woolf_deployer::token_helper {
         )
     }
 
-    public(friend) fun create_token(tokendata_id: TokenDataId): TokenId acquires CollectionCapability {
+    public(friend) fun create_token(tokendata_id: TokenDataId): TokenId acquires CollectionCapability, Data {
         let token_resource = get_token_signer();
 
         // At this point, property_version is 0
         let (_creator, collection_name, _name) = token::get_token_data_id_fields(&tokendata_id);
         assert!(token::check_collection_exists(signer::address_of(&token_resource), collection_name), 125);
 
-        token::mint_token(&token_resource, tokendata_id, 1)
+        let token_id = token::mint_token(&token_resource, tokendata_id, 1);
+        update_supply();
+        token_id
+    }
+
+    fun update_supply() acquires Data, CollectionCapability {
+        let data = borrow_global_mut<Data>(@woolf_deployer);
+        data.collection_supply = collection_supply();
     }
 
     public(friend) fun set_token_props(

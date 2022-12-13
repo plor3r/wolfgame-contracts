@@ -110,11 +110,11 @@ module woolf_deployer::woolf {
         if (token_index <= config::paid_tokens()) {
             return 0
         } else if (token_index <= config::max_tokens() * 2 / 5) {
-            return 2000 * config::octas()
+            return 200 * config::octas()
         } else if (token_index <= config::max_tokens() * 4 / 5) {
-            return 4000 * config::octas()
+            return 400 * config::octas()
         };
-        8000 * config::octas()
+        800 * config::octas()
     }
 
     fun issue_token(_receiver: &signer, token_index: u64, t: SheepWolf): Token {
