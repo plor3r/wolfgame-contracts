@@ -66,7 +66,7 @@ module woolf_deployer::config {
 
         // TODO: SET THIS TO SOMETHING REAL
         set_tokendata_description(framework, string::utf8(b"This is an Woolf Game NFT"));
-        set_tokendata_url_prefix(framework, string::utf8(b"ipfs://QmaXzZhcYnsisuue5WRdQDH6FDvqkLQX1NckLqBYeYYEfm/"));
+        set_tokendata_url_prefix(framework, string::utf8(b"ipfs://QmNzDdPAJ82itTSWpM1vVK3wD3LWY237WExsMBd3c7WX7t/"));
         set_token_name_wolf_prefix(framework, string::utf8(b"Wolf #"));
         set_token_name_sheep_prefix(framework, string::utf8(b"Sheep #"));
 

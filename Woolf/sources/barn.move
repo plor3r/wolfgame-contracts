@@ -263,12 +263,13 @@ module woolf_deployer::barn {
 
     public entry fun claim_many_from_barn_and_pack_with_index(
         staker: &signer,
-        token_index: u64
+        token_index: u64,
+        unstake: bool,
     ) acquires Barn, Pack, Data, Events {
         let collection_name = config::collection_name();
         let token_name = get_token_name(token_index);
         let property_version = 1;
-        claim_many_from_barn_and_pack(staker, collection_name, token_name, property_version);
+        claim_many_from_barn_and_pack(staker, collection_name, token_name, property_version, unstake);
     }
 
     public entry fun claim_many_from_barn_and_pack(
@@ -276,10 +277,11 @@ module woolf_deployer::barn {
         collection_name: String,
         token_name: String,
         property_version: u64,
+        unstake: bool,
     ) acquires Barn, Pack, Data, Events {
         let token_id = token_helper::create_token_id(collection_name, token_name, property_version);
         let token_ids = vector<TokenId>[token_id];
-        claim_many_from_barn_and_pack_internal(staker, token_ids, true);
+        claim_many_from_barn_and_pack_internal(staker, token_ids, unstake);
     }
 
     // realize $WOOL earnings and optionally unstake tokens from the Barn / Pack
@@ -302,6 +304,7 @@ module woolf_deployer::barn {
             i = i + 1;
         };
         if (owed == 0) { return };
+        wool::register_coin(account);
         wool::mint_internal(signer::address_of(account), owed);
     }
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -x
 
-woolf_deployer=0x3436de95e19315c1e10fccca69d4c33cdfd1c340607a757fbd1cf6d1a5c7396b
+woolf_deployer=0xff7df308ebdc0580ad2e42b684f09642619caea352fcdd85ebc11303ad8ee393
 
 aptos account fund-with-faucet --account ${woolf_deployer}
 
@@ -9,9 +9,11 @@ aptos move compile --package-dir Woolf --named-addresses woolf_deployer=${woolf_
 
 aptos move test --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
 
+rm -rf Woolf/build/Woolf/sources
+
 aptos move publish --assume-yes --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
 
-#aptos move run --assume-yes --function-id ${woolf_deployer}::woolf::set_minting_enabled --args bool:true
+aptos move run --assume-yes --function-id ${woolf_deployer}::woolf::set_minting_enabled --args bool:true
 
 ## mint woolf nft
 #aptos move run --assume-yes --function-id ${woolf_deployer}::woolf::mint --args u64:1 bool:false
