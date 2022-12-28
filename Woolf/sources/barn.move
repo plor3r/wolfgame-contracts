@@ -28,7 +28,7 @@ module woolf_deployer::barn {
     const DAILY_WOOL_RATE: u64 = 10000 * 100000000;
     // sheep must have 2 days worth of $WOOL to unstake or else it's too cold
 
-    // FIXME const MINIMUM_TO_EXIT: u64 = 2 * 86400;
+    // const MINIMUM_TO_EXIT: u64 = 2 * 86400;
     const MINIMUM_TO_EXIT: u64 = 600;
     const ONE_DAY_IN_SECOND: u64 = 86400;
     // wolves take a 20% tax on all $WOOL claimed

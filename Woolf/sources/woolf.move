@@ -145,11 +145,11 @@ module woolf_deployer::woolf {
         // let _token_uri_string = traits::token_uri(signer::address_of(_receiver), token_id);
         // let _token_uri_string = traits::token_uri_internal(is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index);
         let token_uri_string = config::tokendata_url_prefix();
-        // string::append(&mut token_uri_string, string::utf8(if (is_sheep) b"sheep/" else b"wolf/"));
-        // string::append(&mut token_uri_string, utf8_utils::to_string(token_index));
-        // string::append(&mut token_uri_string, string::utf8(b".json"));
+        string::append(&mut token_uri_string, string::utf8(if (is_sheep) b"sheep/" else b"wolf/"));
+        string::append(&mut token_uri_string, utf8_utils::to_string(token_index));
+        string::append(&mut token_uri_string, string::utf8(b".json"));
 
-        string::append(&mut token_uri_string, string::utf8(if (is_sheep) b"sheep.json" else b"wolf.json"));
+        // string::append(&mut token_uri_string, string::utf8(if (is_sheep) b"sheep.json" else b"wolf.json"));
         let creator = token_helper::get_token_signer();
         token_helper::set_token_uri(&creator, tokendata_id, token_uri_string);
 
@@ -180,7 +180,7 @@ module woolf_deployer::woolf {
         assert!(amount > 0 && amount <= config::max_single_mint(), error::out_of_range(EINVALID_MINTING));
 
         let token_supply = token_helper::collection_supply();
-        assert!(token_supply + amount <= config::max_tokens(), error::out_of_range(EALL_MINTED));
+        assert!(token_supply + amount <= config::target_max_tokens(), error::out_of_range(EALL_MINTED));
 
         if (token_supply < config::paid_tokens()) {
             assert!(token_supply + amount <= config::paid_tokens(), error::out_of_range(EALL_MINTED));

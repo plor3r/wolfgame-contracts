@@ -28,19 +28,17 @@ module woolf_deployer::config {
 
     const COLLECTION_NAME: vector<u8> = b"Woolf Game NFT";
     const COLLECTION_DESCRIPTION: vector<u8> = b"Woolf game NFT from Alpha Woolf Game team";
-    const COLLECTION_URI: vector<u8> = b"https://woolfgame.com";
+    const COLLECTION_URI: vector<u8> = b"https://wolfgameaptos.xyz";
 
-    // FIXME
     // const MINT_PRICE: u64 = 694200000; // 6.942 APT
     // const MAX_TOKENS: u64 = 50000;
     // const PAID_TOKENS: u64 = 10000;
     const MAX_SINGLE_MINT: u64 = 10;
 
-    // testing config
+    // TEST: testing config
     const MINT_PRICE: u64 = 100000000;
-    const MAX_TOKENS: u64 = 100;
-    const PAID_TOKENS: u64 = 20;
-
+    const MAX_TOKENS: u64 = 1000;
+    const PAID_TOKENS: u64 = 200;
 
     //
     // Errors
@@ -65,8 +63,8 @@ module woolf_deployer::config {
         set_is_enabled(framework, true);
 
         // TODO: SET THIS TO SOMETHING REAL
-        set_tokendata_description(framework, string::utf8(b"This is an Woolf Game NFT"));
-        set_tokendata_url_prefix(framework, string::utf8(b"ipfs://QmNzDdPAJ82itTSWpM1vVK3wD3LWY237WExsMBd3c7WX7t/"));
+        set_tokendata_description(framework, string::utf8(b"Thousands of Sheep and Wolves compete on a farm in the metaverse. A tempting prize of $WOOL awaits, with deadly high stakes."));
+        set_tokendata_url_prefix(framework, string::utf8(b"https://wolfgame.s3.amazonaws.com/"));
         set_token_name_wolf_prefix(framework, string::utf8(b"Wolf #"));
         set_token_name_sheep_prefix(framework, string::utf8(b"Sheep #"));
 
@@ -133,6 +131,10 @@ module woolf_deployer::config {
 
     public fun max_tokens(): u64 {
         MAX_TOKENS
+    }
+
+    public fun target_max_tokens(): u64 {
+        13809
     }
 
     public fun paid_tokens(): u64 {
