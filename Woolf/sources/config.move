@@ -30,15 +30,15 @@ module woolf_deployer::config {
     const COLLECTION_DESCRIPTION: vector<u8> = b"Woolf game NFT from Alpha Woolf Game team";
     const COLLECTION_URI: vector<u8> = b"https://wolfgameaptos.xyz";
 
-    // const MINT_PRICE: u64 = 694200000; // 6.942 APT
-    // const MAX_TOKENS: u64 = 50000;
-    // const PAID_TOKENS: u64 = 10000;
+    const MINT_PRICE: u64 = 694200000; // 6.942 APT
+    const MAX_TOKENS: u64 = 50000;
+    const PAID_TOKENS: u64 = 10000;
     const MAX_SINGLE_MINT: u64 = 10;
 
     // TEST: testing config
-    const MINT_PRICE: u64 = 100000000;
-    const MAX_TOKENS: u64 = 1000;
-    const PAID_TOKENS: u64 = 200;
+    // const MINT_PRICE: u64 = 100000000;
+    // const MAX_TOKENS: u64 = 200;
+    // const PAID_TOKENS: u64 = 40;
 
     //
     // Errors

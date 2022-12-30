@@ -1,7 +1,7 @@
 #!/bin/bash
 set -x
 
-woolf_deployer=0xb00e72d5a2c4a2c12524efd66098f7a12059e7e4a66edf684583a9a34e9d2318
+woolf_deployer=0x76465c5a665cda57337312ed9409ead2d8a7e371073cff66fb4f28ad2767822f
 
 aptos account fund-with-faucet --account ${woolf_deployer}
 
@@ -48,3 +48,13 @@ aptos move run --assume-yes --function-id ${woolf_deployer}::woolf::set_minting_
 #aptos move run --assume-yes --function-id ${woolf_deployer}::risky_game::play_it_safe_one --args u64:1 bool:false
 #aptos move run --assume-yes --function-id ${woolf_deployer}::risky_game::take_a_risk_one --args u64:3
 #aptos move run --assume-yes --function-id ${woolf_deployer}::risky_game::execute_risk_one --args u64:3 bool:false
+
+
+#curl --request POST \
+#  --url https://fullnode.devnet.aptoslabs.com/v1/view \
+#  --header 'Content-Type: application/json' \
+#  --data '{
+#  "function": "0x1e1e2f6639e82e62b41c001d8d6e5076df8b1a310c1164c7d3382cf2b70953e6::barn::max_alpha",
+#  "type_arguments": [],
+#  "arguments": []
+#}'

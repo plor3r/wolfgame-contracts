@@ -110,11 +110,11 @@ module woolf_deployer::woolf {
         if (token_index <= config::paid_tokens()) {
             return 0
         } else if (token_index <= config::max_tokens() * 2 / 5) {
-            return 200 * config::octas()
+            return 20000 * config::octas()
         } else if (token_index <= config::max_tokens() * 4 / 5) {
-            return 400 * config::octas()
+            return 40000 * config::octas()
         };
-        800 * config::octas()
+        80000 * config::octas()
     }
 
     fun issue_token(_receiver: &signer, token_index: u64, t: SheepWolf): Token {
@@ -145,7 +145,7 @@ module woolf_deployer::woolf {
         // let _token_uri_string = traits::token_uri(signer::address_of(_receiver), token_id);
         // let _token_uri_string = traits::token_uri_internal(is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index);
         let token_uri_string = config::tokendata_url_prefix();
-        string::append(&mut token_uri_string, string::utf8(if (is_sheep) b"sheep/" else b"wolf/"));
+        string::append(&mut token_uri_string, string::utf8(if (is_sheep) b"sheepdata/" else b"wolfdata/"));
         string::append(&mut token_uri_string, utf8_utils::to_string(token_index));
         string::append(&mut token_uri_string, string::utf8(b".json"));
 
