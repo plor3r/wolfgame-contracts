@@ -9,7 +9,7 @@ aptos move compile --package-dir Woolf --named-addresses woolf_deployer=${woolf_
 
 aptos move test --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
 
-rm -rf Woolf/build/Woolf/sources
+#rm -rf Woolf/build/Woolf/sources
 
 aptos move publish --assume-yes --package-dir Woolf --named-addresses woolf_deployer=${woolf_deployer}
 

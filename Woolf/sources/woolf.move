@@ -141,30 +141,14 @@ module woolf_deployer::woolf {
 
         traits::update_token_traits(token_id, is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index);
 
-        // FIXME set token_uri
-        // let _token_uri_string = traits::token_uri(signer::address_of(_receiver), token_id);
-        // let _token_uri_string = traits::token_uri_internal(is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index);
         let token_uri_string = config::tokendata_url_prefix();
         string::append(&mut token_uri_string, string::utf8(if (is_sheep) b"sheepdata/" else b"wolfdata/"));
         string::append(&mut token_uri_string, utf8_utils::to_string(token_index));
         string::append(&mut token_uri_string, string::utf8(b".json"));
 
-        // string::append(&mut token_uri_string, string::utf8(if (is_sheep) b"sheep.json" else b"wolf.json"));
         let creator = token_helper::get_token_signer();
         token_helper::set_token_uri(&creator, tokendata_id, token_uri_string);
 
-        // // TODO keep or delete
-        // traits::update_token_traits(
-        //     token_id, is_sheep, fur, head, ears, eyes, nose, mouth, neck, feet, alpha_index
-        // );
-
-        // event::emit_event<TokenMintingEvent>(
-        //     &mut collection_token_minter.token_minting_events,
-        //     TokenMintingEvent {
-        //         token_receiver_address: receiver_addr,
-        //         token_data_id: collection_token_minter.token_data_id,
-        //     }
-        // );
         token::withdraw_token(&creator, token_id, 1)
     }
 
