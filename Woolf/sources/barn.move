@@ -202,6 +202,22 @@ module woolf_deployer::barn {
         add_many_to_barn_and_pack(staker, collection_name, token_name, property_version);
     }
 
+    public entry fun add_many_to_barn_and_pack_with_indice(
+        staker: &signer,
+        token_indice: vector<u64>,
+    ) acquires Barn, Pack, Data, Events, StakedSheep, StakedWolf {
+        let token_length = vector::length(&token_indice);
+        let i = 0;
+        while (i < token_length) {
+            let token_index = *vector::borrow(&token_indice, i);
+            let collection_name = config::collection_name();
+            let token_name = get_token_name(token_index);
+            let property_version = 1;
+            add_many_to_barn_and_pack(staker, collection_name, token_name, property_version);
+            i = i + 1;
+        };
+    }
+
     public entry fun add_many_to_barn_and_pack(
         staker: &signer,
         collection_name: String,
@@ -338,6 +354,23 @@ module woolf_deployer::barn {
     }
 
     /** CLAIMING / UNSTAKING */
+
+    public entry fun claim_many_from_barn_and_pack_with_indice(
+        staker: &signer,
+        token_indice: vector<u64>,
+        unstake: bool,
+    ) acquires Barn, Pack, Data, Events, StakedSheep, StakedWolf {
+        let token_length = vector::length(&token_indice);
+        let i = 0;
+        while (i < token_length) {
+            let token_index = *vector::borrow(&token_indice, i);
+            let collection_name = config::collection_name();
+            let token_name = get_token_name(token_index);
+            let property_version = 1;
+            claim_many_from_barn_and_pack(staker, collection_name, token_name, property_version, unstake);
+            i = i + 1;
+        };
+    }
 
     public entry fun claim_many_from_barn_and_pack_with_index(
         staker: &signer,
