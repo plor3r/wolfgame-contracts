@@ -178,6 +178,11 @@ module woolf_deployer::config {
         set_v1(@woolf_deployer, config_key_token_name_sheep_prefix(), &description)
     }
 
+    public entry fun set_fund_destination_address(sign: &signer, description: address) acquires ConfigurationV1 {
+        assert_signer_is_admin(sign);
+        set_v1(@woolf_deployer, config_key_fund_destination_address(), &description)
+    }
+
     //
     // Configuration Methods
     //
