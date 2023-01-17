@@ -543,7 +543,7 @@ module woolf_deployer::barn {
         if (data.total_wool_earned < MAXIMUM_GLOBAL_WOOL) {
             data.total_wool_earned = data.total_wool_earned +
                 (timestamp::now_seconds() - data.last_claim_timestamp)
-                    * data.total_sheep_staked * DAILY_WOOL_RATE / ONE_DAY_IN_SECOND;
+                    * data.total_sheep_staked / ONE_DAY_IN_SECOND * DAILY_WOOL_RATE;
             data.last_claim_timestamp = timestamp::now_seconds();
         }
     }
